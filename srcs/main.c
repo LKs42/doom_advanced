@@ -230,9 +230,6 @@ void	bomb(int *hm, int x, int y, float radius, int h)
 {
 	int x1;
 	int y1;
-	//pour set la hm a la bonne valeur on aura
-	//if(hm[x,y] > hm[xp,yp])
-	//hm[x,y] = hm[xp,xyp]
 	float tmp = radius;
 	float inc = 0;
 	float a = 0;
