@@ -22,12 +22,6 @@ typedef struct	s_point
 	int z;
 }		t_point;
 
-typedef struct	s_vec2fl
-{
-	float x;
-	float y;
-}		t_vec2fl;
-
 typedef struct	s_screen
 {
 	int width;
@@ -38,6 +32,7 @@ typedef struct	s_screen
 typedef struct	s_map
 {
 	char *name;
+	int scale;
 	int width;
 	int height;
 	uint32_t *heightmap;
@@ -79,8 +74,9 @@ typedef struct s_game
 	t_screen screen;
 }			t_game;
 
-float lerp(float v0, float v1, float t) {
-  return (1 - t) * v0 + t * v1;
+float lerp(float v0, float v1, float t)
+{
+	return (1 - t) * v0 + t * v1;
 }
 
 uint32_t	pp_get_SDLcolor(SDL_Color color)
@@ -198,7 +194,6 @@ unsigned char get_r(uint32_t c)
 	return(c & 0xFF);
 }
 
-
 unsigned char get_g(uint32_t c)
 {
 	return((c >> 8) & 0xFF);
@@ -207,6 +202,12 @@ unsigned char get_g(uint32_t c)
 unsigned char get_b(uint32_t c)
 {
 	return((c >> 16) & 0xFF);
+}
+
+void	draw_hud(uint32_t *pixels, uint32_t *texture)
+{
+	for (int i = 0; i < WIDTH * HEIGHT; i++)
+		if (texture[i] <= 0xF0F0F0) pixels[i] = texture[i];
 }
 
 void	draw_bg(uint32_t *pixels, uint32_t *texture)
@@ -255,27 +256,41 @@ void	bomb(int *hm, int x, int y, float radius, int h)
 	}
 }
 
-void	render(uint32_t *pixels, int *hm, uint32_t *colormap, t_point player, float phi, int height, int horizon, int scale_height, int distance, uint32_t *bg)
+int	compute_distance(int x1, int y1, int x2, int y2)
 {
-	memset(pixels, 0xFFFFFFFF, sizeof(uint32_t) * WIDTH * HEIGHT);
+	int x_dist;
+	int y_dist;
+
+	x_dist = abs(x2 - x1);
+	y_dist = abs(y2 - y1);
+
+	return((int)sqrt((x_dist * x_dist) + (y_dist * y_dist)));
+}
+
+void	render(t_screen *screen, t_map *map, t_player *camera, int *hm, t_bitmap_texture *background, t_bitmap_texture *hud)
+{
+	uint32_t *bg = background->pixels;
+	uint32_t *cockpit = hud->pixels;
+	uint32_t *pixels = screen->pixels;
+	uint32_t *colormap = map->colormap;
+	t_point *player = &camera->pos;
+	float *phi = &camera->view_direction;
+	int *height = &camera->pos.y;
+	int *horizon = &camera->horizon;
+	int scale_height = map->scale;
+	int distance = camera->view_distance;
+	memset(pixels, 0xFFFFFFFF, sizeof(uint32_t) * screen->width * screen->height);
 	draw_bg(pixels, bg);
-	int mapwidthperiod = MAPEXPOSANT * WIDTH - 1;
-	int mapheightperiod = MAPEXPOSANT * HEIGHT - 1;
+	int mapwidthperiod = map->width - 1;
+	int mapheightperiod = map->height - 1;
 
-	(void)scale_height;
-
-	float sinang = sin(phi);
-	float cosang = cos(phi);
-
-	uint32_t hiddeny[WIDTH];
-
-	for (int i = 0; i < WIDTH; i++)
-		hiddeny[i] = 0;
-
-	for(int i = 0; i < WIDTH; i++)
-		hiddeny[i] = HEIGHT;
+	float sinang = sin(*phi);
+	float cosang = cos(*phi);
 
 	float deltaz = 1;
+	uint32_t hiddeny[screen->width];
+	for(int i = 0; i < screen->width; i++)
+		hiddeny[i] = screen->height;
 
 	for(float z=1; z < distance; z += deltaz)
 	{
@@ -283,17 +298,17 @@ void	render(uint32_t *pixels, int *hm, uint32_t *colormap, t_point player, float
 		float ply =   sinang * z - cosang * z;
 		float prx =   cosang * z - sinang * z;
 		float pry =  -sinang * z - cosang * z;
-
-		float dx = (prx - plx) / WIDTH;
-		float dy = (pry - ply) / WIDTH;
-		plx += player.x;
-		ply += player.z;
+		float dx = (prx - plx) / screen->width;
+		float dy = (pry - ply) / screen->width;
+		plx += player->x;
+		ply += player->z;
 		float invz = 1 / z * 240 * scale_height;
 		int mapoffset = 0;
-		for(int i=0; i< WIDTH; i++)
+		for(int i=0; i < screen->width; i++)
 		{
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
-			float heightonscreen = (height - hm[mapoffset]) * invz + horizon;
+			float heightonscreen = ((*height) - hm[mapoffset]) * invz + (*horizon);
+			//uint32_t d = 0x010101 * (z * 30 / distance);
 			draw_vertical_line(pixels, i, heightonscreen, hiddeny[i], colormap[mapoffset]);
 			if (heightonscreen < hiddeny[i]) hiddeny[i] = heightonscreen;
 			plx += dx;
@@ -301,6 +316,7 @@ void	render(uint32_t *pixels, int *hm, uint32_t *colormap, t_point player, float
 		}
 		deltaz += 0.005;
 	}
+	draw_hud(pixels, cockpit);
 }
 
 int	collision_height(int *hm, t_point *player, int *height, int playerheight)
@@ -309,7 +325,7 @@ int	collision_height(int *hm, t_point *player, int *height, int playerheight)
 	int y;
 
 	x = abs(player->x % WIDTH);
-	y = abs(player->y % HEIGHT);
+	y = abs(player->z % HEIGHT);
 	if (*height < hm[y * WIDTH + x] + playerheight)
 		*height = hm[y * WIDTH + x] + playerheight;
 	return (1);
@@ -326,26 +342,25 @@ int	init_game(t_game *game, t_SDL *SDL, int width, int height, char *name)
 {
 	game->screen.height = height;
 	game->screen.width = width;
-	game->screen.pixels = malloc(sizeof(uint32_t) * width * height);
 	game->name = name;
 	game->SDL = *SDL;
 	game->SDL.window = NULL;
 	game->SDL.renderer = NULL;
 	game->SDL.texture = NULL;
-
+	if(!(game->screen.pixels = malloc(sizeof(uint32_t) * width * height)))
+		return (-1);
 	if(0 != SDL_Init(SDL_INIT_VIDEO))
 		return(-1);
 	game->SDL.window = SDL_CreateWindow(game->name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			game->screen.width, game->screen.height, SDL_WINDOW_SHOWN);
 	if(NULL == game->SDL.window)
-	return(-1);
+		return(-1);
 	game->SDL.renderer = SDL_CreateRenderer(game->SDL.window, -1, SDL_RENDERER_SOFTWARE);
 	if(NULL == game->SDL.renderer)
 		return(-1);
-	game->SDL.texture = SDL_CreateTexture(game->SDL.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
+	game->SDL.texture = SDL_CreateTexture(game->SDL.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
 	if (NULL == game->SDL.texture)
 		return(-1);
-
 	return(0);
 }
 
@@ -369,6 +384,7 @@ int	init_map(t_map *map, t_bitmap_texture *heightmap, t_bitmap_texture *colormap
 		return (-1);
 	if (heightmap->head.width != colormap->head.width)
 		return (-1);
+	map->scale = 2;
 	map->height = heightmap->head.height;
 	map->width = heightmap->head.width;
 	map->heightmap = heightmap->pixels;
@@ -377,74 +393,71 @@ int	init_map(t_map *map, t_bitmap_texture *heightmap, t_bitmap_texture *colormap
 	return (0);
 }
 
-int	deal_event(t_game *game, t_player *player, int *quit, int *cursor, int *hm)
+int	deal_event(t_game *game, t_player *player, int *quit, int *cursor, int *hm, t_point *direction)
 {
+	direction->x = 0;
+	direction->y = 0;
 	if (game->SDL.e.type == SDL_QUIT) *quit = 1;
-			if (game->SDL.e.type == SDL_KEYDOWN)
-			{
-				if (game->SDL.e.key.keysym.sym == SDLK_SPACE)
-					player->pos.y += 5;
-				if (game->SDL.e.key.keysym.sym == SDLK_x)
-					player->pos.y -= 5;
-				if (game->SDL.e.key.keysym.sym == SDLK_r)
-					player->horizon += 5;
-				if (game->SDL.e.key.keysym.sym == SDLK_f)
-					player->horizon -= 5;
-				if (game->SDL.e.key.keysym.sym == SDLK_w)
-				{
-					player->pos.z -= player->speed * (float)cos(player->view_direction);//10 == player player->speed;
-					player->pos.x -= player->speed * (float)sin(player->view_direction);
-				}
-				if (game->SDL.e.key.keysym.sym == SDLK_s)
-				{
-					player->pos.z += player->speed * (float)cos(player->view_direction);//10 == player player->speed;
-					player->pos.x += player->speed * (float)sin(player->view_direction);
-				}
-				if (game->SDL.e.key.keysym.sym == SDLK_a)
-				{
-					player->pos.z -= player->speed * (float)cos(player->view_direction + M_PI/2);//10 == player player->speed;
-					player->pos.x -= player->speed * (float)sin(player->view_direction + M_PI/2);
-				}
-				if (game->SDL.e.key.keysym.sym == SDLK_d)
-				{
-					player->pos.z += player->speed * (float)cos(player->view_direction + M_PI/2);//10 == player player->speed;
-					player->pos.x += player->speed * (float)sin(player->view_direction + M_PI/2);
-				}
-				if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE)
-					*quit = 1;
-				if (game->SDL.e.key.keysym.sym == SDLK_LSHIFT)
-					player->speed = 20;
-				if (game->SDL.e.key.keysym.sym == SDLK_LCTRL)
-				{
-					*cursor = *cursor ? 0:1;
-					cursor ? SDL_ShowCursor(SDL_ENABLE) : SDL_ShowCursor(SDL_DISABLE);
-				}
-				if (game->SDL.e.key.keysym.sym == SDLK_p)
-					bomb(hm, abs(player->pos.x % (WIDTH * MAPEXPOSANT)), abs(player->pos.z % (HEIGHT * MAPEXPOSANT)), 50, player->pos.y);
-			}
-			if (game->SDL.e.type == SDL_KEYUP)
-			{
-				if (game->SDL.e.key.keysym.sym == SDLK_LSHIFT)
-					player->speed = 10;
-			}
-			if (game->SDL.e.type == SDL_MOUSEBUTTONDOWN)
-			{
-				if (game->SDL.e.button.button == SDL_BUTTON_LEFT)
-					printf("height:%d\n", player->pos.y);
-				if (game->SDL.e.button.button == SDL_BUTTON_RIGHT)
-					printf("x:%d y: %d\n", player->pos.x, player->pos.z);
-			}
-			if (game->SDL.e.type == SDL_MOUSEMOTION)
-			{
-				if (game->SDL.e.button.x > WIDTH / 2)
-					player->view_direction -= 0.01 * (game->SDL.e.button.x - WIDTH / 2);
-				if (game->SDL.e.button.x < WIDTH / 2)
-					player->view_direction += 0.01 * (WIDTH/2 - game->SDL.e.button.x );
-				if (game->SDL.e.button.y > HEIGHT / 2)
-					player->horizon -= 1 * (game->SDL.e.button.y - HEIGHT / 2);
-				if (game->SDL.e.button.y < HEIGHT / 2)
-					player->horizon += 1 * (HEIGHT/2 - game->SDL.e.button.y);
-			}
+	if (game->SDL.e.type == SDL_KEYDOWN)
+	{
+		if (game->SDL.e.key.keysym.sym == SDLK_SPACE) player->pos.y += 5;
+		if (game->SDL.e.key.keysym.sym == SDLK_x) player->pos.y -= 5;
+		if (game->SDL.e.key.keysym.sym == SDLK_r) player->horizon += 5;
+		if (game->SDL.e.key.keysym.sym == SDLK_f) player->horizon -= 5;
+		if (game->SDL.e.key.keysym.sym == SDLK_w)
+		{
+			direction->y -= player->speed * (float)cos(player->view_direction);
+			direction->x -= player->speed * (float)sin(player->view_direction);
+		}
+		if (game->SDL.e.key.keysym.sym == SDLK_s)
+		{
+			direction->y += player->speed * (float)cos(player->view_direction);
+			direction->x += player->speed * (float)sin(player->view_direction);
+		}
+		if (game->SDL.e.key.keysym.sym == SDLK_a)
+		{
+			direction->y -= player->speed * (float)cos(player->view_direction + M_PI/2);
+			direction->x -= player->speed * (float)sin(player->view_direction + M_PI/2);
+		}
+		if (game->SDL.e.key.keysym.sym == SDLK_d)
+		{
+			direction->y += player->speed * (float)cos(player->view_direction + M_PI/2);
+			direction->x += player->speed * (float)sin(player->view_direction + M_PI/2);
+		}
+		if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) *quit = 1;
+		if (game->SDL.e.key.keysym.sym == SDLK_LSHIFT) player->speed = 20;
+		if (game->SDL.e.key.keysym.sym == SDLK_LCTRL)
+		{
+			*cursor = *cursor ? 0:1;
+			cursor ? SDL_ShowCursor(SDL_ENABLE) : SDL_ShowCursor(SDL_DISABLE);
+		}
+		if (game->SDL.e.key.keysym.sym == SDLK_p) bomb(hm, abs(player->pos.x % (game->screen.width * MAPEXPOSANT)), abs(player->pos.z % (game->screen.height * MAPEXPOSANT)), 50, player->pos.y);
+	}
+	if (game->SDL.e.type == SDL_KEYUP)
+	{
+		if (game->SDL.e.key.keysym.sym == SDLK_LSHIFT)
+			player->speed = 10;
+	}
+	if (game->SDL.e.type == SDL_MOUSEBUTTONDOWN)
+	{
+		if (game->SDL.e.button.button == SDL_BUTTON_LEFT)
+			printf("height:%d\n", player->pos.y);
+		if (game->SDL.e.button.button == SDL_BUTTON_RIGHT)
+			printf("x:%d y: %d\n", player->pos.x, player->pos.z);
+	}
+	if (game->SDL.e.type == SDL_MOUSEMOTION)
+	{
+		if (game->SDL.e.button.x > game->screen.width / 2)
+			player->view_direction -= 0.01 * (game->SDL.e.button.x - game->screen.width / 2);
+		if (game->SDL.e.button.x < game->screen.width / 2)
+			player->view_direction += 0.01 * (game->screen.width/2 - game->SDL.e.button.x );
+		if (game->SDL.e.button.y > game->screen.height / 2)
+			player->horizon -= 1 * (game->SDL.e.button.y - game->screen.height / 2);
+		if (game->SDL.e.button.y < game->screen.height / 2)
+			player->horizon += 1 * (game->screen.height/2 - game->SDL.e.button.y);
+	}
+	player->pos.x += direction->x;
+	player->pos.z += direction->y;
 	return (0);
 }
 
@@ -453,44 +466,41 @@ int main(int argc, char **argv)
 	t_game game;
 	t_SDL SDL;
 	int quit = 0;
-	if (init_game(&game, &SDL, 1024, 1024, "DOOM") == -1)
+	if (init_game(&game, &SDL, WIDTH, HEIGHT, "DOOM") == -1)
 		goto Quit;
 	int statut = EXIT_FAILURE;
 
 	t_bitmap_texture *bg = load_bmp("assets/sky/sky.bmp");
+	t_bitmap_texture *cockpit = load_bmp("assets/cockpit.bmp");
+	printf("%d", cockpit->pixels[WIDTH/2 * WIDTH + WIDTH/2]);
 	t_map map;
 	init_map(&map,	load_bmp("assets/maps/volcano/heightmap.bmp"),
-					load_bmp("assets/maps/volcano/colormap.bmp"),
-					"volcano");
+			load_bmp("assets/maps/volcano/colormap.bmp"),
+			"volcano");
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_RenderClear(game.SDL.renderer);
-
 	SDL_SetRenderDrawBlendMode(game.SDL.renderer, SDL_BLENDMODE_NONE);
 	SDL_SetTextureBlendMode(game.SDL.texture, SDL_BLENDMODE_NONE);
-
 	memset(game.screen.pixels, 0x00000000, game.screen.height * game.screen.width * sizeof(uint32_t));
-
 	t_player player;
 	init_player(&player, &map);
-
 	int *hm;
-	hm = malloc(sizeof(int) * HEIGHT * WIDTH);
-	memset(hm, 0, WIDTH * HEIGHT * sizeof(int));
-	for(int i = 0; i < WIDTH * HEIGHT - 1; i++)
+	hm = malloc(sizeof(int) * game.screen.height * game.screen.width);
+	memset(hm, 0, game.screen.width * game.screen.height * sizeof(int));
+	for(int i = 0; i < game.screen.width * game.screen.height - 1; i++)
 		hm[i] = get_blue(map.heightmap[i]);
 	int cursor = 0;
+	t_point direction;
+	direction.x = 0;
+	direction.y = 0;
 	while(!quit)
 	{
 		if(!cursor)
-			SDL_WarpMouseInWindow(game.SDL.window, WIDTH / 2, HEIGHT / 2);
-
+			SDL_WarpMouseInWindow(game.SDL.window, game.screen.width / 2, game.screen.height / 2);
 		while(SDL_PollEvent(&game.SDL.e))
-			deal_event(&game, &player, &quit, &cursor, hm);
-
+			deal_event(&game, &player, &quit, &cursor, hm, &direction);
 		collision_height(hm, &player.pos, &player.pos.y, 10);
-
-		render(game.screen.pixels, hm, map.colormap, player.pos, player.view_direction, player.pos.y, player.horizon, 2, player.view_distance, bg->pixels);
-
+		render(&game.screen, &map, &player, hm, bg, cockpit);
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
 		SDL_RenderClear(game.SDL.renderer);
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
