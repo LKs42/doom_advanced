@@ -6,7 +6,7 @@
 /*   By: lbenard <lbenard@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/01/27 16:05:22 by lbenard           #+#    #+#             */
-/*   Updated: 2019/02/20 20:01:39 by lbenard          ###   ########.fr       */
+/*   Updated: 2019/02/24 18:29:59 by lbenard          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,11 @@
 
 t_u32	rgb_to_int(t_rgb color)
 {
-	int	result;
+	t_u32	result;
 
-	result = color.r;
+	result = 255;
+	result <<= 8;
+	result += color.r;
 	result <<= 8;
 	result += color.g;
 	result <<= 8;
