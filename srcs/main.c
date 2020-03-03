@@ -22,6 +22,14 @@ typedef struct	s_point
 	int z;
 }		t_point;
 
+typedef struct s_button
+{
+	t_point pos;
+	int width;
+	int height;
+	uint32_t color;
+}		t_button;
+
 typedef struct	s_screen
 {
 	int width;
@@ -158,6 +166,44 @@ void	pp_liner(uint32_t *pixel, t_point *a, t_point *b, uint32_t color)
 		tab[0] += (tab[9] > -tab[4]) ? tab[5] : 0;
 		tab[8] += (tab[9] < tab[6]) ? tab[4] : 0;
 		tab[2] += (tab[9] < tab[6]) ? tab[7] : 0;
+	}
+}
+
+uint32_t	darken(uint32_t color, int p, int print)
+{
+	uint32_t r;
+	uint32_t g;
+	uint32_t b;
+
+	r = (color >> 16) & 255;
+	g = (color >> 8) & 255;
+	b = color & 255;
+
+	r /= p;
+	g /= p;
+	b /= p;
+
+	if(print)
+		printf("r:%d g:%d b:%d ", r, g, b);
+	color = r << 16 | g << 8 | b;
+	return (color);
+}
+
+void	rect(uint32_t *pixels, int x, int y, int width, int height, uint32_t color)
+{
+	int i;
+	int j;
+
+	i = 0;
+	while(i < height)
+	{
+		j = 0;
+		while(j < width)
+		{
+			pixels[(y + i) * WIDTH + (x + j)] = color;
+			j++;
+		}
+	i++;
 	}
 }
 
@@ -325,6 +371,8 @@ int	collision_height(int *hm, t_point *player, int *height, int playerheight)
 	y = abs(player->z % HEIGHT);
 	if (*height < hm[y * WIDTH + x] + playerheight)
 		*height = hm[y * WIDTH + x] + playerheight;
+	if (*height > 300)
+		*height = 300;
 	return (1);
 }
 
@@ -458,6 +506,75 @@ int	deal_event(t_game *game, t_player *player, int *quit, int *cursor, int *hm, 
 	return (0);
 }
 
+t_button *button(int x, int y, int width, int height)
+{
+	t_button *result;
+
+	if(!(result = malloc(sizeof(t_button))))
+		return (NULL);
+	result->pos.x = x;
+	result->pos.y = y;
+	result->width = width;
+	result->height = height;
+	return (result);
+}
+
+t_button	**init_menu()
+{
+	t_button **list;
+
+	if(!(list = malloc(sizeof(t_button) * 3)))
+		return (0);
+	list[0] = button(50, 50, 50, 50);
+	list[1] = button(50, 110, 50, 50);
+	list[2] = button(50, 170, 50, 50);
+	list[3] = NULL;
+	return (list);
+}
+
+int	button_hover(t_button *button, int x, int y)
+{
+	if (x >= button->pos.x && x <= button->pos.x + button->width)
+	{
+		if (y >= button->pos.y && y <= button->pos.y + button->height)
+		{
+			return (1);
+		}
+	}
+	return (0);
+}
+
+void	render_button(t_screen *screen, t_button *button, int x, int y)
+{
+	int i;
+	int j;
+	uint32_t color;
+
+	color = 0xFFFF00FF;
+	i = 0;
+	while (i < button->height)
+	{
+		j = 0;
+		while(j < button->width)
+		{
+			screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, x, y) ? 0xFFFF00FF : 0xFF00FFFF;
+			j++;
+		}
+		i++;
+	}
+}
+void	render_menu(t_screen *screen, t_button **list, int x, int y)
+{
+	int i;
+	i = 0;
+
+	while(i < 3)
+	{
+		render_button(screen, list[i], x, y);
+		i++;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	t_game game;
@@ -490,6 +607,7 @@ int main(int argc, char **argv)
 	t_point direction;
 	direction.x = 0;
 	direction.y = 0;
+	t_button **list = init_menu();
 	while(!quit)
 	{
 		if(!cursor)
@@ -498,6 +616,7 @@ int main(int argc, char **argv)
 			deal_event(&game, &player, &quit, &cursor, hm, &direction);
 		collision_height(hm, &player.pos, &player.pos.y, 10);
 		render(&game.screen, &map, &player, hm, bg, cockpit);
+		render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
 		SDL_RenderClear(game.SDL.renderer);
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
