@@ -441,52 +441,60 @@ int	init_map(t_map *map, t_bitmap_texture *heightmap, t_bitmap_texture *colormap
 	return (0);
 }
 
-int	deal_event(t_game *game, t_player *player, int *quit, int *cursor, int *hm, t_point *direction)
+void	move_forward(t_player *player, t_point *direction)
 {
+
+	direction->y -= player->speed * (float)cos(player->view_direction);
+	direction->x -= player->speed * (float)sin(player->view_direction);
+}
+
+void	move_backward(t_player *player, t_point *direction)
+{
+	direction->y += player->speed * (float)cos(player->view_direction);
+	direction->x += player->speed * (float)sin(player->view_direction);
+}
+
+void	move_left(t_player *player, t_point *direction)
+{
+	direction->y -= player->speed * (float)cos(player->view_direction + M_PI/2);
+	direction->x -= player->speed * (float)sin(player->view_direction + M_PI/2);
+}
+
+void	move_right(t_player *player, t_point *direction)
+{
+	direction->y += player->speed * (float)cos(player->view_direction + M_PI/2);
+	direction->x += player->speed * (float)sin(player->view_direction + M_PI/2);
+}
+
+int	game_event(t_game *game, t_player *player, int *quit, int *hm, t_point *direction)
+{
+
+//pour regler le pb de mouvements n initialise pas a 0 ici et set a 0 lorsquil y a le keyup et ca devrait etre cool jpense
+
 	direction->x = 0;
 	direction->y = 0;
-	if (game->SDL.e.type == SDL_QUIT) *quit = 1;
+	int forward = 0;
+	int side = 0;
 	if (game->SDL.e.type == SDL_KEYDOWN)
 	{
 		if (game->SDL.e.key.keysym.sym == SDLK_SPACE) player->pos.y += 5;
-		if (game->SDL.e.key.keysym.sym == SDLK_1) game->STATE = GAME;
-		if (game->SDL.e.key.keysym.sym == SDLK_2) game->STATE = MENU;
-		if (game->SDL.e.key.keysym.sym == SDLK_x) player->pos.y -= 5;
+		if (game->SDL.e.key.keysym.sym == SDLK_LCTRL) player->pos.y -= 5;
+		if (game->SDL.e.key.keysym.sym == SDLK_LSHIFT) player->speed = 20;
 		if (game->SDL.e.key.keysym.sym == SDLK_r) player->horizon += 5;
 		if (game->SDL.e.key.keysym.sym == SDLK_f) player->horizon -= 5;
-		if (game->SDL.e.key.keysym.sym == SDLK_w)
-		{
-			direction->y -= player->speed * (float)cos(player->view_direction);
-			direction->x -= player->speed * (float)sin(player->view_direction);
-		}
-		if (game->SDL.e.key.keysym.sym == SDLK_s)
-		{
-			direction->y += player->speed * (float)cos(player->view_direction);
-			direction->x += player->speed * (float)sin(player->view_direction);
-		}
-		if (game->SDL.e.key.keysym.sym == SDLK_a)
-		{
-			direction->y -= player->speed * (float)cos(player->view_direction + M_PI/2);
-			direction->x -= player->speed * (float)sin(player->view_direction + M_PI/2);
-		}
-		if (game->SDL.e.key.keysym.sym == SDLK_d)
-		{
-			direction->y += player->speed * (float)cos(player->view_direction + M_PI/2);
-			direction->x += player->speed * (float)sin(player->view_direction + M_PI/2);
-		}
-		if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) *quit = 1;
-		if (game->SDL.e.key.keysym.sym == SDLK_LSHIFT) player->speed = 20;
-		if (game->SDL.e.key.keysym.sym == SDLK_LCTRL)
-		{
-			*cursor = *cursor ? 0:1;
-			cursor ? SDL_ShowCursor(SDL_ENABLE) : SDL_ShowCursor(SDL_DISABLE);
-		}
-		if (game->SDL.e.key.keysym.sym == SDLK_p) bomb(hm, abs(player->pos.x % (game->screen.width * MAPEXPOSANT)), abs(player->pos.z % (game->screen.height * MAPEXPOSANT)), 50, player->pos.y);
+		if (game->SDL.e.key.keysym.sym == SDLK_w) forward++;
+		if (game->SDL.e.key.keysym.sym == SDLK_s) forward--;
+		if (game->SDL.e.key.keysym.sym == SDLK_a) side--;
+		if (game->SDL.e.key.keysym.sym == SDLK_d) side++;
 	}
 	if (game->SDL.e.type == SDL_KEYUP)
 	{
 		if (game->SDL.e.key.keysym.sym == SDLK_LSHIFT)
 			player->speed = 10;
+		if (game->SDL.e.key.keysym.sym == SDLK_w) forward = 0;
+		if (game->SDL.e.key.keysym.sym == SDLK_s) forward = 0;
+		if (game->SDL.e.key.keysym.sym == SDLK_a) side = 0;
+		if (game->SDL.e.key.keysym.sym == SDLK_d) side = 0;
 	}
 	if (game->SDL.e.type == SDL_MOUSEBUTTONDOWN)
 	{
@@ -506,8 +514,24 @@ int	deal_event(t_game *game, t_player *player, int *quit, int *cursor, int *hm, 
 		if (game->SDL.e.button.y < game->screen.height / 2)
 			player->horizon += 1 * (game->screen.height/2 - game->SDL.e.button.y);
 	}
+
+	if (forward == 1) move_forward(player, direction);
+	if (forward == -1) move_backward(player, direction);
+	if (side == 1) move_right(player, direction);
+	if (side == -1) move_left(player, direction);
+
 	player->pos.x += direction->x;
 	player->pos.z += direction->y;
+	return (0);
+
+}
+int	deal_event(t_game *game, t_player *player, int *quit, int *hm, t_point *direction)
+{
+	if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) *quit = 1;
+	if (game->SDL.e.type == SDL_QUIT) *quit = 1;
+	if (game->SDL.e.key.keysym.sym == SDLK_1) game->STATE = GAME;
+	if (game->SDL.e.key.keysym.sym == SDLK_2) game->STATE = MENU;
+	if(game->STATE == GAME) game_event(game, player, quit, hm, direction);
 	return (0);
 }
 
@@ -572,7 +596,7 @@ void	render_menu(t_screen *screen, t_button **list, int x, int y)
 {
 	int i;
 	i = 0;
-	
+	memset(screen->pixels, 0x181818, sizeof(uint32_t) * screen->width * screen->height);
 	while(i < 3)
 	{
 		render_button(screen, list[i], x, y);
@@ -613,14 +637,21 @@ int main(int argc, char **argv)
 	direction.y = 0;
 	t_button **list = init_menu();
 	while(!quit)
-	{
+	{	
+		if (game.STATE == MENU)
+			cursor = 1;
+		if (game.STATE == GAME)
+			cursor = 0;
+		cursor ? SDL_ShowCursor(SDL_ENABLE) : SDL_ShowCursor(SDL_DISABLE);
 		if(!cursor)
 			SDL_WarpMouseInWindow(game.SDL.window, game.screen.width / 2, game.screen.height / 2);
 		while(SDL_PollEvent(&game.SDL.e))
-			deal_event(&game, &player, &quit, &cursor, hm, &direction);
+			deal_event(&game, &player, &quit, hm, &direction);
 		collision_height(hm, &player.pos, &player.pos.y, 1);
-		render(&game.screen, &map, &player, hm, bg, cockpit);
-		render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
+		if (game.STATE == GAME)
+			render(&game.screen, &map, &player, hm, bg, cockpit);
+		if (game.STATE == MENU)
+			render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
 		SDL_RenderClear(game.SDL.renderer);
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
