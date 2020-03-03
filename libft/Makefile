@@ -6,7 +6,7 @@
 #    By: lbenard <lbenard@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/11/05 18:02:14 by lbenard           #+#    #+#              #
-#    Updated: 2020/01/14 06:37:29 by lbenard          ###   ########.fr        #
+#    Updated: 2019/02/20 21:56:15 by lbenard          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,7 +15,6 @@ SRCS_LIST		=	containers/list/init_list_head.c		\
 					containers/list/list_foreach.c			\
 					containers/list/list_is_last.c			\
 					containers/list/list_is_empty.c			\
-					containers/list/list_size.c				\
 					containers/list/list_add.c				\
 					containers/list/list_add_entry.c		\
 					containers/list/list_add_tail.c			\
@@ -37,44 +36,18 @@ SRCS_LIST		=	containers/list/init_list_head.c		\
 					containers/list/lst_remove.c			\
 					containers/list/lst_strjoin.c			\
 					containers/list/free_lst.c				\
-					containers/module/ft_constructor.c		\
-					containers/module/init_module_node.c	\
-					containers/module/destroy_module_node.c	\
-					containers/module/init.c				\
-					containers/module/add.c					\
-					containers/module/remove.c				\
-					containers/module/allocate.c			\
-					containers/module/create.c				\
-					containers/module/destroy.c				\
-					containers/string/string.c				\
-					containers/string/string_clone.c		\
-					containers/string/init.c				\
-					containers/string/init_clone.c			\
-					containers/string/set.c					\
-					containers/string/dup.c					\
-					containers/string/as_ref.c				\
-					containers/string/destroy.c				\
-					containers/string/ft_static_string.c	\
-					containers/string/static_string_as_ref.c\
-					containers/vector/vector.c				\
-					containers/vector/vector_data.c			\
 					containers/vector/init_vector.c			\
 					containers/vector/init_vector_data.c	\
 					containers/vector/vector_reserve.c		\
 					containers/vector/vector_shrink.c		\
-					containers/vector/vector_double.c		\
 					containers/vector/vector_clear.c		\
 					containers/vector/vector_insert.c		\
 					containers/vector/vector_push_back.c	\
-					containers/vector/destroy_vector.c		\
+					containers/vector/free_vector.c			\
 					colors/rgb/ft_rgb.c						\
 					colors/rgb/ft_rgb_int.c					\
 					colors/rgb/ft_rgb_hsv.c					\
 					colors/rgb/rgb_to_int.c					\
-					colors/rgba/ft_rgba.c					\
-					colors/rgba/ft_rgba_rgb.c				\
-					colors/rgba/ft_rgba_int.c				\
-					colors/rgba/ft_rgba_hsv.c				\
 					colors/hsv/ft_hsv.c						\
 					colors/hsv/hsv_to_int.c					\
 					sizes/ft_usize.c						\
@@ -82,35 +55,19 @@ SRCS_LIST		=	containers/list/init_list_head.c		\
 					maths/maths/ft_abs.c					\
 					maths/maths/ft_max.c					\
 					maths/maths/ft_min.c					\
-					maths/maths/ft_fabs.c					\
-					maths/maths/ft_fmax.c					\
-					maths/maths/ft_fmin.c					\
-					maths/maths/ft_smax.c					\
-					maths/maths/ft_smin.c					\
-					maths/maths/ft_ssabs.c					\
-					maths/maths/ft_ssmax.c					\
-					maths/maths/ft_ssmin.c					\
 					maths/maths/ft_atoi.c					\
 					maths/maths/ft_atof.c					\
 					maths/maths/ft_itoa.c					\
 					maths/maths/ft_nblen.c					\
-					maths/maths/lerp.c						\
-					maths/maths/inverse_lerp.c				\
-					maths/transform/ft_transform.c			\
-					maths/transform/ft_transform_default.c	\
 					maths/vec2i/ft_vec2i.c					\
 					maths/vec3i/ft_vec3i.c					\
 					maths/vec4i/ft_vec4i.c					\
 					maths/vec2f/ft_vec2f.c					\
 					maths/vec2f/vec2f_dot.c					\
 					maths/vec2f/vec2f_scalar.c				\
-					maths/vec2f/vec2f_distance.c			\
-					maths/vec2f/vec2f_normalize.c			\
 					maths/vec3f/ft_vec3f.c					\
 					maths/vec3f/vec3f_dot.c					\
 					maths/vec3f/vec3f_scalar.c				\
-					maths/vec3f/vec3f_distance.c			\
-					maths/vec3f/vec3f_normalize.c			\
 					maths/vec3f/vec3f_to_vec2f.c			\
 					maths/vec3f/vec3f_to_vec4f.c			\
 					maths/vec4f/ft_vec4f.c					\
@@ -120,11 +77,9 @@ SRCS_LIST		=	containers/list/init_list_head.c		\
 					maths/vec2d/ft_vec2d.c					\
 					maths/vec2d/vec2d_dot.c					\
 					maths/vec2d/vec2d_scalar.c				\
-					maths/vec2d/vec2d_distance.c			\
 					maths/vec3d/ft_vec3d.c					\
 					maths/vec3d/vec3d_dot.c					\
 					maths/vec3d/vec3d_scalar.c				\
-					maths/vec3d/vec3d_distance.c			\
 					maths/vec3d/vec3d_to_vec2d.c			\
 					maths/vec3d/vec3d_to_vec4d.c			\
 					maths/vec4d/ft_vec4d.c					\
@@ -134,11 +89,9 @@ SRCS_LIST		=	containers/list/init_list_head.c		\
 					maths/vec2ld/ft_vec2ld.c				\
 					maths/vec2ld/vec2ld_dot.c				\
 					maths/vec2ld/vec2ld_scalar.c			\
-					maths/vec2ld/vec2ld_distance.c			\
 					maths/vec3ld/ft_vec3ld.c				\
 					maths/vec3ld/vec3ld_dot.c				\
 					maths/vec3ld/vec3ld_scalar.c			\
-					maths/vec3ld/vec3ld_distance.c			\
 					maths/vec3ld/vec3ld_to_vec2ld.c			\
 					maths/vec3ld/vec3ld_to_vec4ld.c			\
 					maths/vec4ld/ft_vec4ld.c				\
@@ -204,7 +157,6 @@ SRCS_LIST		=	containers/list/init_list_head.c		\
 					ft/str/ft_strcount.c					\
 					ft/str/ft_getline.c						\
 					ft/str/ft_skipchr.c						\
-					ft/str/ft_nextline.c					\
 					ft/str/ft_isalpha.c						\
 					ft/str/ft_isdigit.c						\
 					ft/str/ft_isalnum.c						\
@@ -213,7 +165,6 @@ SRCS_LIST		=	containers/list/init_list_head.c		\
 					ft/str/ft_isspace.c						\
 					ft/str/ft_isupper.c						\
 					ft/str/ft_islower.c						\
-					ft/str/ft_isnumber.c					\
 					ft/str/ft_toupper.c						\
 					ft/str/ft_tolower.c						\
 					ft/str/ft_get_next_line.c
@@ -224,7 +175,7 @@ OBJS_LIST		=	$(SRCS_LIST:.c=.o)
 OBJS_FOLDER		=	./objs/
 OBJS			=	$(addprefix $(OBJS_FOLDER), $(OBJS_LIST))
 INCLUDES		=	-I includes/
-CFLAGS			=	-Wall -Wextra -Werror -O3 -Ofast -flto -pedantic
+CFLAGS			=	#-Wall -Wextra -Werror -O3 -Ofast -flto
 
 # Colors
 BOLD			=	\e[1m

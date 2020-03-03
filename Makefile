@@ -1,8 +1,31 @@
-# **************** VARIABLES ****************
-UNAME		=	$(shell uname)
-NAME		=	doom-nukem
+#****************	RAPPEL	****************
+#	commentaire mono-ligne
 
-# SOURCES
+#	commentaire\
+	multi-ligne
+
+#	NAME = VALUE -> permet de definir une constante
+#	NAME := VALUE -> permet de definir une variable
+
+#	cible:dependance
+#		commande
+
+#	$@	Le nom de la cible
+#	$<	Le nom de la première dépendance
+#	$^	La liste des dépendances
+#	$?	La liste des dépendances plus récentes que la cible
+#	$*	Le nom du fichier sans suffixe
+#	.PHONY -> cible dont les dependances sont systematiquement reconstruites
+
+#	$(addprefix prefix, name) -> permet d'ajouter un prefix
+
+
+
+#****************	VARIABLES	****************
+UNAME		=	$(shell uname)
+EXEC		=	doom-nukem
+
+#SOURCES
 SRCS_LIST	=	main.c														\
 				bitmap/load_bmp.c											\
 				error/throw_error.c											\
@@ -13,58 +36,39 @@ SRCS_LIST	=	main.c														\
 SRCS_FOLDER	=	./srcs/
 SRCS		=	$(addprefix $(SRCS_FOLDER), $(SRCS_LIST))
 
-# OBJECTS
-OBJS_LIST	=	$(SRCS_LIST:.c=.o)
+#OBJECTS
+OBJS_LIST	=	$(SRCS_LIST:.c=.o)	#Pour chaque .c de SRC on construit dans OBJ un .o
 OBJS_FOLDER	=	./objs/
 OBJS		=	$(addprefix $(OBJS_FOLDER), $(OBJS_LIST))
 
-# HEADERS
+#HEADERS
 INCLUDES_FOLDER	=	./includes/
 INCLUDES	:=	-I includes
 
-# COMPILATION
+#COMPILATION
 CC			=	gcc
-CFLAGS		:=	#-Wall -Werror -Wextra 
-LDFLAGS		:=
+CFLAGS		:=#	-Wall -Werror -Wextra
+LDFLAGS		:=#	-Wall -Werror -Wextra
 
-# LIBRARIES
-#  libft
+#LIBRARIES
+#	libft
 LIBFT_FOLDER=	./libft
 LIBFT		=	$(LIBFT_FOLDER)/libft.a
 INCLUDES	:=	$(INCLUDES) -I $(LIBFT_FOLDER)/includes
-LDFLAGS		:=	$(LDFLAGS) -L $(LIBFT_FOLDER) -lft -lm
+LDFLAGS		:=	$(LDFLAGS) -L $(LIBFT_FOLDER) -lft                  -lm
+#	SDL
+SDL_FOLDER	=	./SDL
+SDL			=	$(SDL_FOLDER)/build
+INCLUDES	:=	$(INCLUDES) -I $(SDL_FOLDER)/include
+LDFLAGS		:=	$(LDFLAGS) -L $(SDL_FOLDER) `sdl2-config --cflags --libs`
 
-#  SDL
-SDL_FOLDER		=	./SDL
-SDL				=	$(SDL_FOLDER)/build
-SDL_CONFIGURE	=	$(SDL_FOLDER)/aclocal.m4
-INCLUDES		:=	$(INCLUDES) -I $(SDL_FOLDER)/include
-LDFLAGS			:=	$(LDFLAGS) -L $(SDL_FOLDER) -lSDL2
 
-#  SDL Mixer
-SDL_MIXER_FOLDER	=	./SDL_mixer
-SDL_MIXER			=	$(SDL_MIXER_FOLDER)/build
-SDL_MIXER_CONFIGURE	=	$(SDL_MIXER_FOLDER)/autom4te.cache
-INCLUDES			:=	$(INCLUDES) -I $(SDL_MIXER_FOLDER)
-LDFLAGS				:=	$(LDFLAGS) -Wl,-rpath=$(SDL_MIXER_FOLDER)/build/.libs -L $(SDL_MIXER_FOLDER)/build/.libs -lSDL2_mixer
 
-#  SDL TTF
-SDL_TTF_FOLDER		=	./SDL_ttf
-SDL_TTF				=	$(SDL_TTF_FOLDER)/.libs
-SDL_TTF_CONFIGURE	=	$(SDL_TTF_FOLDER)/autom4te.cache
-INCLUDES			:=	$(INCLUDES) -I $(SDL_TTF_FOLDER)
-LDFLAGS				:=	$(LDFLAGS) -Wl,-rpath=$(SDL_TTF_FOLDER) -L $(SDL_TTF_FOLDER) -lSDL2_ttf
+#****************	RULES	****************
+all: $(SDL) $(LIBFT) $(EXEC)
 
-# **************** RULES ****************
-
-all: $(SDL) $(SDL_MIXER) $(SDL_TTF) $(LIBFT) $(NAME)
-
-$(NAME): $(OBJS)
-	@printf "Linking...\n"
-	@$(CC) $(OBJS) -o $(NAME) $(LDFLAGS)
-
-run: $(ALL)
-	@./$(NAME)
+$(EXEC): $(OBJS)
+	@$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
 
 $(OBJS_FOLDER)%.o: $(SRCS_FOLDER)%.c
 	@mkdir -p $(dir $@)
@@ -73,82 +77,40 @@ $(OBJS_FOLDER)%.o: $(SRCS_FOLDER)%.c
 $(LIBFT):
 	@make -C libft
 
-$(SDL_CONFIGURE):
-	@printf "Configuring SDL...\n"
-	@cd $(SDL_FOLDER) && \
-	./autogen.sh && \
-	./configure
+$(SDL):
+	@printf "compiling SDL it may takes long time ~3mn <3\n";
+	@cd $(SDL_FOLDER) &&\
+	./configure > /dev/null &&\
+	make > /dev/null;
 
-$(SDL): $(SDL_CONFIGURE)
-	@printf "Compiling SDL...\n"
-	@cd $(SDL_FOLDER) && \
-	make
-
-$(SDL_MIXER_CONFIGURE):
-	@printf "Configuring SDL Mixer...\n"
-	@cd $(SDL_MIXER_FOLDER) && \
-	./autogen.sh && \
-	./configure
-
-$(SDL_MIXER): $(SDL_MIXER_CONFIGURE)
-	@printf "Compiling SDL Mixer...\n"
-	@cd $(SDL_MIXER_FOLDER) && \
-	make
-
-$(SDL_TTF_CONFIGURE):
-	@printf "Configuring SDL TTF...\n"
-	@cd $(SDL_TTF_FOLDER) && \
-	./autogen.sh && \
-	./configure
-
-$(SDL_TTF): $(SDL_TTF_CONFIGURE)
-	@printf "Compiling SDL TTF...\n"
-	@cd $(SDL_TTF_FOLDER) && \
-	make
+cl:
+	@rm -rf $(OBJS_FOLDER)
 
 clean: libft-clean sdl-clean
 	@rm -rf $(OBJS_FOLDER)
 
-mostlyclean:
-	@rm -rf $(OBJS_FOLDER)
-
 libft-clean:
-	@make -C $(LIBFT_FOLDER) clean
+	@make -C $(LIBFT_FOLDER) clean > /dev/null
 
 sdl-clean:
-	# @make -C $(SDL_FOLDER) clean
+	@cd $(SDL_FOLDER) &&\
+	make clean > /dev/null;
 
-sdl-mixer-clean:
-	@make -C $(SDL_MIXER_FOLDER) clean
-
-sdl-ttf-clean:
-	@make -C $(SDL_TTF_FOLDER) clean
-
-clean-binary:
-	@rm -rf $(NAME)
-
-fcl: mostlyclean clean-binary
-	@rm -rf $(NAME)
+fcl: cl
+	@rm -rf $(EXEC)
 
 fclean: clean libft-fclean sdl-fclean
-	@rm -rf $(NAME)
+	@rm -rf $(EXEC)
 
 libft-fclean:
-	@make -C $(LIBFT_FOLDER) fclean
+	@make -C $(LIBFT_FOLDER) fclean > /dev/null
 
-sdl-fclean: sdl-clean
-	@rm -rf $(SDL_FOLDER)/build
+sdl-fclean:
+	@cd $(SDL_FOLDER);\
+	make clean > /dev/null
 
-sdl-mixer-fclean: sdl-mixer-clean
-	@rm -rf $(SDL_MIXER_FOLDER)/build
-
-sdl-ttf-fclean: sdl-ttf-clean
-	@rm -rf $(SDL_TTF_FOLDER)/.libs
-
-r: mostlyclean all
+r: cl all
 
 re: fclean all
 
-relink: clean-binary $(NAME)
-
-.PHONY: clean mostlyclean libft-clean sdl-clean sdl-mixer-clean sdl-ttf-clean clean-binary fcl fclean libft-fclean sdl-fclean sdl-mixer-fclean sdl-ttf-fclean r re relink
+.PHONY: clean libft-clean sdl-clean fclean libft-fclean sdl-fclean re

@@ -6,7 +6,7 @@
 /*   By: lbenard <lbenard@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/06 14:43:39 by lbenard           #+#    #+#             */
-/*   Updated: 2019/02/24 19:34:48 by lbenard          ###   ########.fr       */
+/*   Updated: 2019/02/20 20:07:14 by lbenard          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,6 @@
 ** Maths
 */
 # include "maths/maths.h"
-# include "maths/transform.h"
 # include "maths/vec2i.h"
 # include "maths/vec3i.h"
 # include "maths/vec4i.h"

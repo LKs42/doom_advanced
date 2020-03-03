@@ -6,7 +6,7 @@
 /*   By: lbenard <lbenard@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/20 17:26:53 by lbenard           #+#    #+#             */
-/*   Updated: 2019/09/28 15:39:03 by lbenard          ###   ########.fr       */
+/*   Updated: 2019/02/20 17:27:49 by lbenard          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,5 @@ t_vec2d			ft_vec2d(double x, double y);
 */
 double			vec2d_dot(t_vec2d a, t_vec2d b);
 t_vec2d			vec2d_scalar(t_vec2d src, double a);
-double			vec2d_distance(t_vec2d a, t_vec2d b);
 
 #endif

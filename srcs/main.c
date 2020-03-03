@@ -22,14 +22,6 @@ typedef struct	s_point
 	int z;
 }		t_point;
 
-typedef struct s_button
-{
-	t_point pos;
-	int width;
-	int height;
-	uint32_t color;
-}		t_button;
-
 typedef struct	s_screen
 {
 	int width;
@@ -75,9 +67,18 @@ typedef struct s_SDL
 	SDL_Texture *texture;
 }			t_SDL;
 
+typedef struct s_button
+{
+	t_point pos;
+	int width;
+	int height;
+	uint32_t color;
+}		t_button;
+
 typedef struct s_game
 {
 	char *name;
+	GAME_STATE STATE;
 	t_SDL SDL;
 	t_screen screen;
 }			t_game;
@@ -135,6 +136,26 @@ void	pp_liner_int(int *pixel, t_point *a, t_point *b, int color)
 	}
 }
 
+uint32_t	darken(uint32_t color, int p, int print)
+{
+	uint32_t r;
+	uint32_t g;
+	uint32_t b;
+
+	r = (color >> 16) & 255;
+	g = (color >> 8) & 255;
+	b = color & 255;
+
+	r /= p;
+	g /= p;
+	b /= p;
+
+	if(print)
+		printf("r:%d g:%d b:%d ", r, g, b);
+	color = r << 16 | g << 8 | b;
+	return (color);
+}
+
 int pp_putpixel(uint32_t *pixel, int x, int y, uint32_t color)
 {
 	if(y < 0 || y > HEIGHT)
@@ -167,26 +188,6 @@ void	pp_liner(uint32_t *pixel, t_point *a, t_point *b, uint32_t color)
 		tab[8] += (tab[9] < tab[6]) ? tab[4] : 0;
 		tab[2] += (tab[9] < tab[6]) ? tab[7] : 0;
 	}
-}
-
-uint32_t	darken(uint32_t color, int p, int print)
-{
-	uint32_t r;
-	uint32_t g;
-	uint32_t b;
-
-	r = (color >> 16) & 255;
-	g = (color >> 8) & 255;
-	b = color & 255;
-
-	r /= p;
-	g /= p;
-	b /= p;
-
-	if(print)
-		printf("r:%d g:%d b:%d ", r, g, b);
-	color = r << 16 | g << 8 | b;
-	return (color);
 }
 
 void	rect(uint32_t *pixels, int x, int y, int width, int height, uint32_t color)
@@ -276,6 +277,9 @@ void	bomb(int *hm, int x, int y, float radius, int h)
 {
 	int x1;
 	int y1;
+	//pour set la hm a la bonne valeur on aura
+	//if(hm[x,y] > hm[xp,yp])
+	//hm[x,y] = hm[xp,xyp]
 	float tmp = radius;
 	float inc = 0;
 	float a = 0;
@@ -371,8 +375,6 @@ int	collision_height(int *hm, t_point *player, int *height, int playerheight)
 	y = abs(player->z % HEIGHT);
 	if (*height < hm[y * WIDTH + x] + playerheight)
 		*height = hm[y * WIDTH + x] + playerheight;
-	if (*height > 300)
-		*height = 300;
 	return (1);
 }
 
@@ -392,6 +394,7 @@ int	init_game(t_game *game, t_SDL *SDL, int width, int height, char *name)
 	game->SDL.window = NULL;
 	game->SDL.renderer = NULL;
 	game->SDL.texture = NULL;
+	game->STATE = MENU;
 	if(!(game->screen.pixels = malloc(sizeof(uint32_t) * width * height)))
 		return (-1);
 	if(0 != SDL_Init(SDL_INIT_VIDEO))
@@ -446,6 +449,8 @@ int	deal_event(t_game *game, t_player *player, int *quit, int *cursor, int *hm, 
 	if (game->SDL.e.type == SDL_KEYDOWN)
 	{
 		if (game->SDL.e.key.keysym.sym == SDLK_SPACE) player->pos.y += 5;
+		if (game->SDL.e.key.keysym.sym == SDLK_1) game->STATE = GAME;
+		if (game->SDL.e.key.keysym.sym == SDLK_2) game->STATE = MENU;
 		if (game->SDL.e.key.keysym.sym == SDLK_x) player->pos.y -= 5;
 		if (game->SDL.e.key.keysym.sym == SDLK_r) player->horizon += 5;
 		if (game->SDL.e.key.keysym.sym == SDLK_f) player->horizon -= 5;
@@ -523,11 +528,13 @@ t_button	**init_menu()
 {
 	t_button **list;
 
+	int size = 250;
+
 	if(!(list = malloc(sizeof(t_button) * 3)))
 		return (0);
-	list[0] = button(50, 50, 50, 50);
-	list[1] = button(50, 110, 50, 50);
-	list[2] = button(50, 170, 50, 50);
+	list[0] = button(WIDTH/2 - size/2, HEIGHT/2 , size, 50);
+	list[1] = button(WIDTH/2 - size/2, HEIGHT/2 + 60, size, 50);
+	list[2] = button(WIDTH/2 - size/2, HEIGHT/2 + 120, size, 50);
 	list[3] = NULL;
 	return (list);
 }
@@ -548,9 +555,7 @@ void	render_button(t_screen *screen, t_button *button, int x, int y)
 {
 	int i;
 	int j;
-	uint32_t color;
 
-	color = 0xFFFF00FF;
 	i = 0;
 	while (i < button->height)
 	{
@@ -567,7 +572,7 @@ void	render_menu(t_screen *screen, t_button **list, int x, int y)
 {
 	int i;
 	i = 0;
-
+	
 	while(i < 3)
 	{
 		render_button(screen, list[i], x, y);
@@ -586,7 +591,6 @@ int main(int argc, char **argv)
 
 	t_bitmap_texture *bg = load_bmp("assets/sky/sky.bmp");
 	t_bitmap_texture *cockpit = load_bmp("assets/cockpit.bmp");
-	printf("%d", cockpit->pixels[WIDTH/2 * WIDTH + WIDTH/2]);
 	t_map map;
 	init_map(&map,	load_bmp("assets/maps/volcano/heightmap.bmp"),
 			load_bmp("assets/maps/volcano/colormap.bmp"),
@@ -614,7 +618,7 @@ int main(int argc, char **argv)
 			SDL_WarpMouseInWindow(game.SDL.window, game.screen.width / 2, game.screen.height / 2);
 		while(SDL_PollEvent(&game.SDL.e))
 			deal_event(&game, &player, &quit, &cursor, hm, &direction);
-		collision_height(hm, &player.pos, &player.pos.y, 10);
+		collision_height(hm, &player.pos, &player.pos.y, 1);
 		render(&game.screen, &map, &player, hm, bg, cockpit);
 		render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
@@ -622,7 +626,6 @@ int main(int argc, char **argv)
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
 		SDL_RenderPresent(game.SDL.renderer);
 	}
-
 	statut = EXIT_SUCCESS;
 
 Quit:
