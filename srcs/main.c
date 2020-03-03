@@ -69,6 +69,7 @@ typedef struct s_SDL
 
 typedef struct s_button
 {
+	t_list_head	node;
 	t_point pos;
 	int width;
 	int height;
@@ -524,19 +525,57 @@ t_button *button(int x, int y, int width, int height)
 	return (result);
 }
 
-t_button	**init_menu()
+// t_button	**init_menu()
+// {
+// 	t_button **list;
+
+// 	int size = 250;
+
+// 	if(!(list = malloc(sizeof(t_button) * 3)))
+// 		return (0);
+// 	list[0] = button(WIDTH/2 - size/2, HEIGHT/2 , size, 50);
+// 	list[1] = button(WIDTH/2 - size/2, HEIGHT/2 + 60, size, 50);
+// 	list[2] = button(WIDTH/2 - size/2, HEIGHT/2 + 120, size, 50);
+// 	list[3] = NULL;
+// 	return (list);
+// }
+
+
+void	add_button_menu(t_point pos, int width, int height, t_list_head *button_list)
 {
-	t_button **list;
+	t_button	*nbutton;
 
-	int size = 250;
+	nbutton = button(pos.x, pos.y, width, height);
+	init_list_head(&nbutton->node);
+	list_add_entry(&nbutton->node, button_list);
+}
 
-	if(!(list = malloc(sizeof(t_button) * 3)))
-		return (0);
-	list[0] = button(WIDTH/2 - size/2, HEIGHT/2 , size, 50);
-	list[1] = button(WIDTH/2 - size/2, HEIGHT/2 + 60, size, 50);
-	list[2] = button(WIDTH/2 - size/2, HEIGHT/2 + 120, size, 50);
-	list[3] = NULL;
-	return (list);
+void	init_menu(t_list_head *button_list, int nb)
+{
+	t_list_head *pos;
+	int			i;
+	int 		size;
+	t_button	*nbutton;
+	int			height;
+
+	i = 0;
+	size = 250;
+	height = HEIGHT / 2;
+	while (i < nb)
+	{
+		nbutton = button(WIDTH/2 - size/2, height, size, 50);
+		init_list_head(&nbutton->node);
+		height += 60;
+		list_add_entry(&nbutton->node, button_list);
+		i++;
+	}
+	// if(!(list = malloc(sizeof(t_button) * 3)))
+	// 	return (0);
+	// list[0] = button(WIDTH/2 - size/2, HEIGHT/2 , size, 50);
+	// list[1] = button(WIDTH/2 - size/2, HEIGHT/2 + 60, size, 50);
+	// list[2] = button(WIDTH/2 - size/2, HEIGHT/2 + 120, size, 50);
+	// list[3] = NULL;
+	// return ;
 }
 
 int	button_hover(t_button *button, int x, int y)
@@ -568,15 +607,27 @@ void	render_button(t_screen *screen, t_button *button, int x, int y)
 		i++;
 	}
 }
-void	render_menu(t_screen *screen, t_button **list, int x, int y)
+// void	render_menu(t_screen *screen, t_button **list, int x, int y)
+// {
+// 	int i;
+// 	i = 0;
+
+// 	while(i < 3)
+// 	{
+// 		render_button(screen, list[i], x, y);
+// 		i++;
+// 	}
+// }
+
+void	render_menu(t_screen *screen, t_list_head *button_list, int x, int y)
 {
-	int i;
-	i = 0;
-	
-	while(i < 3)
+	t_list_head	*pos;
+
+	pos = button_list->next;
+	while(pos != button_list)
 	{
-		render_button(screen, list[i], x, y);
-		i++;
+		render_button(screen, ((t_button*)pos), x, y);
+		pos = pos->next;
 	}
 }
 
@@ -611,16 +662,33 @@ int main(int argc, char **argv)
 	t_point direction;
 	direction.x = 0;
 	direction.y = 0;
-	t_button **list = init_menu();
+	// t_button **list = init_menu();
+	t_list_head	button_list;
+	init_list_head(&button_list);
+	init_menu(&button_list, 1);
+	t_point	pos;
+	pos.x = 50;
+	pos.y = 50;
+	add_button_menu(pos, 400, 80, &button_list);
 	while(!quit)
 	{
 		if(!cursor)
 			SDL_WarpMouseInWindow(game.SDL.window, game.screen.width / 2, game.screen.height / 2);
 		while(SDL_PollEvent(&game.SDL.e))
 			deal_event(&game, &player, &quit, &cursor, hm, &direction);
-		collision_height(hm, &player.pos, &player.pos.y, 1);
-		render(&game.screen, &map, &player, hm, bg, cockpit);
-		render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
+		if (game.STATE == GAME)
+		{
+			collision_height(hm, &player.pos, &player.pos.y, 1);
+			render(&game.screen, &map, &player, hm, bg, cockpit);
+		}
+		else if(game.STATE == MENU)
+		{
+			ft_putendl("haah");
+			uint32_t	*test;
+			// test = game.screen.pixels;
+			// ft_memset(test, 0xFFFFFFFF, sizeof(uint32_t) * game.screen.width * game.screen.height);
+		}
+		render_menu(&game.screen, &button_list, game.SDL.e.button.x, game.SDL.e.button.y);
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
 		SDL_RenderClear(game.SDL.renderer);
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
