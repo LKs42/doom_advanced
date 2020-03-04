@@ -73,6 +73,8 @@ typedef struct s_button
 	t_point pos;
 	int width;
 	int height;
+	int	id;
+	int	clicked;
 	uint32_t color;
 }		t_button;
 
@@ -512,6 +514,18 @@ int	deal_event(t_game *game, t_player *player, int *quit, int *cursor, int *hm, 
 	return (0);
 }
 
+void	quit_doom(t_game *game)
+{
+	if(NULL != game->SDL.renderer)
+		SDL_DestroyRenderer(game->SDL.renderer);
+	if(NULL != game->SDL.texture)
+		SDL_DestroyTexture(game->SDL.texture);
+	if(NULL != game->SDL.window)
+		SDL_DestroyWindow(game->SDL.window);
+	SDL_Quit();
+	exit(0);
+}
+
 t_button *button(int x, int y, int width, int height)
 {
 	t_button *result;
@@ -522,6 +536,7 @@ t_button *button(int x, int y, int width, int height)
 	result->pos.y = y;
 	result->width = width;
 	result->height = height;
+	result->clicked = 0;
 	return (result);
 }
 
@@ -547,6 +562,10 @@ void	add_button_menu(t_point pos, int width, int height, t_list_head *button_lis
 
 	nbutton = button(pos.x, pos.y, width, height);
 	init_list_head(&nbutton->node);
+	if (button_list->next != button_list)
+		nbutton->id = ((t_button*)button_list->prev)->id + 1;
+	else
+		nbutton->id = 1;
 	list_add_entry(&nbutton->node, button_list);
 }
 
@@ -554,18 +573,19 @@ void	init_menu(t_list_head *button_list, int nb)
 {
 	t_list_head *pos;
 	int			i;
-	int 		size;
+	// int 		size;
 	t_button	*nbutton;
 	int			height;
 
 	i = 0;
-	size = 250;
-	height = HEIGHT / 2;
+	// size = 500;
+	height = HEIGHT / 2 - 500 / nb;
 	while (i < nb)
 	{
-		nbutton = button(WIDTH/2 - size/2, height, size, 50);
+		nbutton = button(WIDTH/2 - 500/2, height, 500, 150);
+		nbutton->id = i + 1;
 		init_list_head(&nbutton->node);
-		height += 60;
+		height += 190;
 		list_add_entry(&nbutton->node, button_list);
 		i++;
 	}
@@ -590,7 +610,17 @@ int	button_hover(t_button *button, int x, int y)
 	return (0);
 }
 
-void	render_button(t_screen *screen, t_button *button, int x, int y)
+int	button_click(t_button *button, SDL_MouseButtonEvent mouse)
+{
+	if (button_hover(button, mouse.x, mouse.y) == 1 && mouse.button == SDL_BUTTON_LEFT && mouse.state == SDL_PRESSED)
+	{
+		// printf("button id = %d\n", button->id);
+		return (1);
+	}
+	return (0);
+}
+
+void	render_button(t_screen *screen, t_button *button, SDL_MouseButtonEvent mouse)
 {
 	int i;
 	int j;
@@ -601,10 +631,64 @@ void	render_button(t_screen *screen, t_button *button, int x, int y)
 		j = 0;
 		while(j < button->width)
 		{
-			screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, x, y) ? 0xFFFF00FF : 0xFF00FFFF;
+			if (button_click(button, mouse) == 1)
+				screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = 0xFF00FF00;
+			else
+				screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, mouse.x, mouse.y) ? 0xFFFF00FF : 0xFF00FFFF;
 			j++;
 		}
 		i++;
+	}
+}
+
+void	switch_menu_edit(t_game *game)
+{
+	if (game->STATE == MENU)
+		game->STATE = EDIT;
+	else if (game->STATE == EDIT)
+		game->STATE = MENU;
+}
+
+void	switch_menu_game(t_game *game)
+{
+	if (game->STATE == GAME)
+		game->STATE = MENU;
+	else if (game->STATE == MENU)
+		game->STATE = GAME;
+}
+
+void	manage_button(t_button* button, SDL_MouseButtonEvent mouse, t_game *game)
+{
+	if (button_click(button, mouse) == 1)
+	{
+		if (button->id == 1 && button->clicked == 0)
+		{
+			switch_menu_game(game);
+			button->clicked = 1;
+		}
+		if (button->id == 2 && button->clicked == 0)
+		{
+			switch_menu_edit(game);
+			button->clicked = 1;
+		}
+		if (button->id == 3 && button->clicked == 0)
+		{
+			quit_doom(game);
+		}
+	}
+	else
+		button->clicked = 0;
+}
+
+void	act_button(t_list_head *button_list, SDL_MouseButtonEvent mouse, t_game *game)
+{
+	t_list_head	*pos;
+
+	pos = button_list->next;
+	while (pos != button_list)
+	{
+		manage_button(((t_button*)pos), mouse, game);
+		pos = pos->next;
 	}
 }
 // void	render_menu(t_screen *screen, t_button **list, int x, int y)
@@ -619,16 +703,38 @@ void	render_button(t_screen *screen, t_button *button, int x, int y)
 // 	}
 // }
 
-void	render_menu(t_screen *screen, t_list_head *button_list, int x, int y)
+void	render_menu(t_screen *screen, t_list_head *button_list, SDL_MouseButtonEvent mouse)
 {
 	t_list_head	*pos;
 
 	pos = button_list->next;
 	while(pos != button_list)
 	{
-		render_button(screen, ((t_button*)pos), x, y);
+		render_button(screen, ((t_button*)pos), mouse);
 		pos = pos->next;
 	}
+}
+
+void	draw_menu(t_screen *screen, t_bitmap_texture *background)
+{
+	uint32_t	*menu_pixels;
+	uint32_t	*bg;
+
+	menu_pixels = screen->pixels;
+	bg = background->pixels;
+	memset(menu_pixels, 0xFFFFFFFF, sizeof(uint32_t) * screen->width * screen->height);
+	draw_bg(menu_pixels, bg);
+}
+
+void	draw_edit(t_screen *screen, uint32_t *heightmap)
+{
+	uint32_t	*edit_pixels;
+	uint32_t	*hm;
+
+	edit_pixels = screen->pixels;
+	hm = heightmap;
+	memset(edit_pixels, 0xFFFFFFFF, sizeof(uint32_t) * screen->width * screen->height);
+	draw_bg(edit_pixels, hm);
 }
 
 int main(int argc, char **argv)
@@ -665,11 +771,19 @@ int main(int argc, char **argv)
 	// t_button **list = init_menu();
 	t_list_head	button_list;
 	init_list_head(&button_list);
-	init_menu(&button_list, 1);
+	init_menu(&button_list, 3);
+	t_list_head	edit_button_list;
 	t_point	pos;
-	pos.x = 50;
-	pos.y = 50;
-	add_button_menu(pos, 400, 80, &button_list);
+	pos.x = 0;
+	pos.y = HEIGHT / 2 - (2 * (160 / 2));
+	init_list_head(&edit_button_list);
+	add_button_menu(pos, 200, 100, &edit_button_list);
+	pos.y += 120;
+	add_button_menu(pos, 200, 100, &edit_button_list);
+	pos.y += 120;
+	add_button_menu(pos, 200, 100, &edit_button_list);
+	// add_button_menu(pos, 400, 80, &button_list);
+	// goto Quit;
 	while(!quit)
 	{
 		if(!cursor)
@@ -681,14 +795,18 @@ int main(int argc, char **argv)
 			collision_height(hm, &player.pos, &player.pos.y, 1);
 			render(&game.screen, &map, &player, hm, bg, cockpit);
 		}
-		else if(game.STATE == MENU)
+		else if (game.STATE == MENU)
 		{
-			ft_putendl("haah");
-			uint32_t	*test;
-			// test = game.screen.pixels;
-			// ft_memset(test, 0xFFFFFFFF, sizeof(uint32_t) * game.screen.width * game.screen.height);
+			// ft_putendl("haah");
+			draw_menu(&game.screen, bg);
+			render_menu(&game.screen, &button_list, game.SDL.e.button);
+			act_button(&button_list, game.SDL.e.button, &game);
 		}
-		render_menu(&game.screen, &button_list, game.SDL.e.button.x, game.SDL.e.button.y);
+		else if (game.STATE == EDIT)
+		{
+			draw_edit(&game.screen, map.heightmap);
+			render_menu(&game.screen, &edit_button_list, game.SDL.e.button);
+		}
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
 		SDL_RenderClear(game.SDL.renderer);
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
