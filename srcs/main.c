@@ -93,8 +93,7 @@ typedef struct s_monster
 	t_point pos;
 	int range_detection;
 	float speed;
-	
-};
+}			t_monster;
 
 float lerp(float v0, float v1, float t)
 {
@@ -274,6 +273,17 @@ void	draw_bg(uint32_t *pixels, uint32_t *texture)
 {
 	for (int i = 0; i < HEIGHT * WIDTH; i++)
 		pixels[i] = texture[i];
+}
+
+void	draw_heightmap(uint32_t *pixels, int *texture, int x, int y)
+{
+	for (int i = 0; i < 1024; i++)
+	{
+		for (int j = 0; j < 1024; j++)
+		{
+			pixels[(i + y) * WIDTH + (j + x)] = 0x010101 * texture[i * 1024 + j];
+		}
+	}
 }
 
 void	draw_line(int *hm, int x, int y, int size, int h, int radius)
@@ -683,12 +693,6 @@ void	render_button(t_screen *screen, t_button *button, SDL_MouseButtonEvent mous
 
 void	switch_menu_edit(t_game *game)
 {
-<<<<<<< HEAD
-	int i;
-	i = 0;
-	memset(screen->pixels, 0x181818, sizeof(uint32_t) * screen->width * screen->height);
-	while(i < 3)
-=======
 	if (game->STATE == MENU)
 		game->STATE = EDIT;
 	else if (game->STATE == EDIT)
@@ -706,7 +710,6 @@ void	switch_menu_game(t_game *game)
 void	manage_button(t_button* button, SDL_MouseButtonEvent mouse, t_game *game)
 {
 	if (button_click(button, mouse) == 1)
->>>>>>> origin/mribouch
 	{
 		if (button->id == 1 && button->clicked == 0)
 		{
@@ -773,15 +776,16 @@ void	draw_menu(t_screen *screen, t_bitmap_texture *background)
 	draw_bg(menu_pixels, bg);
 }
 
-void	draw_edit(t_screen *screen, uint32_t *heightmap)
+void	draw_edit(t_screen *screen, t_map *map, t_bitmap_texture *background)
 {
 	uint32_t	*edit_pixels;
-	uint32_t	*hm;
+	uint32_t	*bg;
 
+	bg = background->pixels;
 	edit_pixels = screen->pixels;
-	hm = heightmap;
 	memset(edit_pixels, 0xFFFFFFFF, sizeof(uint32_t) * screen->width * screen->height);
-	draw_bg(edit_pixels, hm);
+	draw_bg(edit_pixels, bg);
+	draw_heightmap(edit_pixels, map->heightmap, (WIDTH - map->width ) / 2, (HEIGHT - map->height) / 2);
 }
 
 int main(int argc, char **argv)
@@ -835,34 +839,22 @@ int main(int argc, char **argv)
 		cursor ? SDL_ShowCursor(SDL_ENABLE) : SDL_ShowCursor(SDL_DISABLE);
 		if(!cursor)
 			SDL_WarpMouseInWindow(game.SDL.window, game.screen.width / 2, game.screen.height / 2);
-<<<<<<< HEAD
 		process_input(&game, &player, &quit, &direction);
 		collision_height(map.heightmap, &player.pos, &player.pos.y, 1);
 		if (game.STATE == GAME)
 			render(&game.screen, &map, &player, bg, cockpit);
 		if (game.STATE == MENU)
-			render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
-=======
-		while(SDL_PollEvent(&game.SDL.e))
-			deal_event(&game, &player, &quit, &cursor, hm, &direction);
-		if (game.STATE == GAME)
+			//render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
 		{
-			collision_height(hm, &player.pos, &player.pos.y, 1);
-			render(&game.screen, &map, &player, hm, bg, cockpit);
-		}
-		else if (game.STATE == MENU)
-		{
-			// ft_putendl("haah");
 			draw_menu(&game.screen, bg);
-			render_menu(&game.screen, &button_list, game.SDL.e.button);
 			act_button(&button_list, game.SDL.e.button, &game);
+			render_menu(&game.screen, &button_list, game.SDL.e.button);
 		}
-		else if (game.STATE == EDIT)
+		if (game.STATE == EDIT)
 		{
-			draw_edit(&game.screen, map.heightmap);
+			draw_edit(&game.screen, &map, bg);
 			render_menu(&game.screen, &edit_button_list, game.SDL.e.button);
 		}
->>>>>>> origin/mribouch
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
 		SDL_RenderClear(game.SDL.renderer);
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
