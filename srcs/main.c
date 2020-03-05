@@ -149,7 +149,7 @@ void	pp_liner_int(int *pixel, t_point *a, t_point *b, int color)
 	}
 }
 
-uint32_t	darken(uint32_t color, int p, int print)
+uint32_t	darken(uint32_t color, int p)
 {
 	uint32_t r;
 	uint32_t g;
@@ -158,10 +158,14 @@ uint32_t	darken(uint32_t color, int p, int print)
 	r = (color >> 16) & 255;
 	g = (color >> 8) & 255;
 	b = color & 255;
+	
+	r -= p;
+	g -= p;
+	b -= p;
 
-	r /= p;
-	g /= p;
-	b /= p;
+	if (r < 0) r = 0;
+	if (g < 0) g = 0;
+	if (b < 0) b = 0;
 
 	color = r << 16 | g << 8 | b;
 	return (color);
@@ -336,6 +340,32 @@ int	compute_distance(int x1, int y1, int x2, int y2)
 	return((int)sqrt((x_dist * x_dist) + (y_dist * y_dist)));
 }
 
+uint32_t	light(uint32_t color, float z, int distance, int value)
+{
+	uint32_t r;
+	uint32_t g;
+	uint32_t b;
+
+	r = (color >> 16) & 255;
+	g = (color >> 8) & 255;
+	b = color & 255;
+	
+	r /= (z * value / distance);
+	g /= (z * value / distance);
+	b /= (z * value / distance);
+
+	if (r < 0) r = 0;
+	if (g < 0) g = 0;
+	if (b < 0) b = 0;
+
+	if (r > 255) r = 255;
+	if (g > 255) g = 255;
+	if (b > 255) b = 255;
+
+	color = r << 16 | g << 8 | b;
+	return (color);
+}
+
 void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *background, t_bitmap_texture *hud)
 {
 	uint32_t *bg = background->pixels;
@@ -377,8 +407,8 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 		{
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
 			float heightonscreen = ((*height) - map->heightmap[mapoffset]) * invz + (*horizon);
-			//uint32_t d = 0x010101 * (z * 30 / distance);
-			draw_vertical_line(pixels, i, heightonscreen, hiddeny[i], darken(colormap[mapoffset], z));
+			uint32_t d = 0x010101 * (z * 30 / distance);
+			draw_vertical_line(pixels, i, heightonscreen, hiddeny[i], light(colormap[mapoffset], z, distance, 10));
 			if (heightonscreen < hiddeny[i]) hiddeny[i] = heightonscreen;
 			plx += dx;
 			ply += dy;
