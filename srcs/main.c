@@ -84,6 +84,7 @@ typedef struct s_game
 	GAME_STATE STATE;
 	t_SDL SDL;
 	t_screen screen;
+	int quit;
 }			t_game;
 
 typedef struct s_monster
@@ -162,8 +163,6 @@ uint32_t	darken(uint32_t color, int p, int print)
 	g /= p;
 	b /= p;
 
-	if(print)
-		printf("r:%d g:%d b:%d ", r, g, b);
 	color = r << 16 | g << 8 | b;
 	return (color);
 }
@@ -420,6 +419,7 @@ int	init_game(t_game *game, t_SDL *SDL, int width, int height, char *name)
 	game->SDL.renderer = NULL;
 	game->SDL.texture = NULL;
 	game->STATE = MENU;
+	game->quit = 0;
 	if(!(game->screen.pixels = malloc(sizeof(uint32_t) * width * height)))
 		return (-1);
 	if(0 != SDL_Init(SDL_INIT_VIDEO))
@@ -499,7 +499,7 @@ void	move_right(t_player *player, t_point *direction)
 	direction->x += player->speed * (float)sin(player->view_direction + M_PI/2);
 }
 
-void	process_continuous_key(t_game *game, t_player *player, int *quit, t_point *direction)
+void	process_continuous_key(t_game *game, t_player *player, t_point *direction)
 {
 	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 	direction->x = 0;
@@ -514,7 +514,7 @@ void	process_continuous_key(t_game *game, t_player *player, int *quit, t_point *
 	if (keystate[SDL_SCANCODE_D]) move_right(player, direction);
 }
 
-int	game_event(t_game *game, t_player *player, int *quit, t_point *direction)
+int	game_event(t_game *game, t_player *player, t_point *direction)
 {
 	if (game->SDL.e.type == SDL_KEYUP)
 	{
@@ -544,22 +544,22 @@ int	game_event(t_game *game, t_player *player, int *quit, t_point *direction)
 
 }
 
-int	deal_event(t_game *game, t_player *player, int *quit, t_point *direction)
+int	deal_event(t_game *game, t_player *player, t_point *direction)
 {
-	if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) *quit = 1;
-	if (game->SDL.e.type == SDL_QUIT) *quit = 1;
+	if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) game->quit = 1;
+	if (game->SDL.e.type == SDL_QUIT) game->quit = 1;
 	if (game->SDL.e.key.keysym.sym == SDLK_F1) game->STATE = GAME;
 	if (game->SDL.e.key.keysym.sym == SDLK_F2) game->STATE = MENU;
 	if(game->STATE == GAME)
-		game_event(game, player, quit, direction);
+		game_event(game, player, direction);
 	return (0);
 }
 
-void	process_input(t_game *game, t_player *player, int *quit, t_point *direction)
+void	process_input(t_game *game, t_player *player, t_point *direction)
 {
-	if(game->STATE == GAME) process_continuous_key(game, player, quit, direction);
+	if(game->STATE == GAME) process_continuous_key(game, player, direction);
 	while(SDL_PollEvent(&game->SDL.e))
-		deal_event(game, player, quit, direction);
+		deal_event(game, player, direction);
 	player->pos.x += direction->x;
 	player->pos.z += direction->y;
 }
@@ -792,7 +792,6 @@ int main(int argc, char **argv)
 {
 	t_game game;
 	t_SDL SDL;
-	int quit = 0;
 	if (init_game(&game, &SDL, WIDTH, HEIGHT, "DOOM") == -1)
 		goto Quit;
 	int statut = EXIT_FAILURE;
@@ -830,7 +829,7 @@ int main(int argc, char **argv)
 	add_button_menu(pos, 200, 100, &edit_button_list);
 	// add_button_menu(pos, 400, 80, &button_list);
 	// goto Quit;
-	while(!quit)
+	while(!game.quit)
 	{	
 		if (game.STATE == MENU)
 			cursor = 1;
@@ -839,7 +838,7 @@ int main(int argc, char **argv)
 		cursor ? SDL_ShowCursor(SDL_ENABLE) : SDL_ShowCursor(SDL_DISABLE);
 		if(!cursor)
 			SDL_WarpMouseInWindow(game.SDL.window, game.screen.width / 2, game.screen.height / 2);
-		process_input(&game, &player, &quit, &direction);
+		process_input(&game, &player, &direction);
 		collision_height(map.heightmap, &player.pos, &player.pos.y, 1);
 		if (game.STATE == GAME)
 			render(&game.screen, &map, &player, bg, cockpit);
