@@ -378,7 +378,7 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
 			float heightonscreen = ((*height) - map->heightmap[mapoffset]) * invz + (*horizon);
 			//uint32_t d = 0x010101 * (z * 30 / distance);
-			draw_vertical_line(pixels, i, heightonscreen, hiddeny[i], colormap[mapoffset]);
+			draw_vertical_line(pixels, i, heightonscreen, hiddeny[i], darken(colormap[mapoffset], z));
 			if (heightonscreen < hiddeny[i]) hiddeny[i] = heightonscreen;
 			plx += dx;
 			ply += dy;
@@ -541,7 +541,6 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 	}
 
 	return (0);
-
 }
 
 int	deal_event(t_game *game, t_player *player, t_point *direction)
