@@ -158,7 +158,7 @@ uint32_t	darken(uint32_t color, int p)
 	r = (color >> 16) & 255;
 	g = (color >> 8) & 255;
 	b = color & 255;
-	
+
 	r -= p;
 	g -= p;
 	b -= p;
@@ -349,7 +349,7 @@ uint32_t	light(uint32_t color, float z, int distance, int value)
 	r = (color >> 16) & 255;
 	g = (color >> 8) & 255;
 	b = color & 255;
-	
+
 	r /= (z * value / distance);
 	g /= (z * value / distance);
 	b /= (z * value / distance);
@@ -476,7 +476,7 @@ int	init_player(t_player *player, t_map *map)
 	player->pos.y = 100;
 	player->fov = 90;
 	player->horizon = 650;
-	player->view_distance = 1000;
+	player->view_distance = 500;
 	player->speed = 10;
 	return (0);
 }
@@ -575,11 +575,14 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 
 int	deal_event(t_game *game, t_player *player, t_point *direction)
 {
-	if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) game->quit = 1;
-	if (game->SDL.e.type == SDL_QUIT) game->quit = 1;
-	if (game->SDL.e.key.keysym.sym == SDLK_F1) game->STATE = GAME;
-	if (game->SDL.e.key.keysym.sym == SDLK_F2) game->STATE = MENU;
-	if(game->STATE == GAME)
+	if (game->SDL.e.type == SDL_KEYUP)
+	{
+		if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) game->quit = 1;
+		if (game->SDL.e.type == SDL_QUIT) game->quit = 1;
+		if (game->SDL.e.key.keysym.sym == SDLK_F1) game->STATE = GAME;
+		if (game->SDL.e.key.keysym.sym == SDLK_F2) game->STATE = MENU;
+	}
+	if (game->STATE == GAME)
 		game_event(game, player, direction);
 	return (0);
 }
@@ -858,8 +861,22 @@ int main(int argc, char **argv)
 	add_button_menu(pos, 200, 100, &edit_button_list);
 	// add_button_menu(pos, 400, 80, &button_list);
 	// goto Quit;
+
+	double currenttime;
+	double rendercount = 0;
+	double lasttime = 0;
+	double avgFPS;
 	while(!game.quit)
-	{	
+	{
+		currenttime = SDL_GetTicks();
+		avgFPS = (float)rendercount / ((float)currenttime / 1000);
+		if (currenttime > lasttime + 1000)
+		{
+			printf("%f \n", avgFPS);
+			if(avgFPS > 20000000)
+				avgFPS = 0;
+			lasttime = currenttime;
+		}
 		if (game.STATE == MENU)
 			cursor = 1;
 		if (game.STATE == GAME)
@@ -883,6 +900,7 @@ int main(int argc, char **argv)
 			draw_edit(&game.screen, &map, bg);
 			render_menu(&game.screen, &edit_button_list, game.SDL.e.button);
 		}
+		rendercount++;
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
 		SDL_RenderClear(game.SDL.renderer);
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
