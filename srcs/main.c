@@ -59,6 +59,13 @@ typedef enum e_GAME_STATE
 	QUIT,
 }		GAME_STATE;
 
+typedef enum	e_edit_state
+{
+	NEXT,
+	BRUSH,
+	COLOR,
+}				t_edit_state;
+
 typedef struct s_SDL
 {
 	SDL_Event e;
@@ -82,6 +89,7 @@ typedef struct s_game
 {
 	char *name;
 	GAME_STATE STATE;
+	t_edit_state E_STATE;
 	t_SDL SDL;
 	t_screen screen;
 }			t_game;
@@ -707,7 +715,52 @@ void	switch_menu_game(t_game *game)
 		game->STATE = GAME;
 }
 
-void	manage_button(t_button* button, SDL_MouseButtonEvent mouse, t_game *game)
+
+void	brush_height(t_game *game, t_map *map, SDL_MouseButtonEvent mouse)
+{
+	// int x = ((WIDTH - map->width) /2);
+	int x = (WIDTH - map->width) / 2;
+	int y = (HEIGHT - map->height) / 2;
+
+	//int y = ((HEIGHT - map->height) /2);
+	
+	if (mouse.button == SDL_BUTTON_LEFT && mouse.state == SDL_PRESSED)
+	{
+		if (mouse.x >= (WIDTH / 2 - map->width / 2) && mouse.x <= (WIDTH / 2 + map->width / 2))
+			//map->heightmap[(WIDTH / 2 - map->width / 2) - mouse.x + mouse.y * WIDTH] = 0xFFFFFF;
+			// map->heightmap[(mouse.y - (int)y) * map->width + (mouse.x - (int)x)] += 1;
+			for (int i = 0; i < 10; i++)
+				for (int j = 0; j < 10; j++)
+					map->heightmap[(mouse.y - (int)y + i) * map->width + (mouse.x - (int)x + j)] += 10;
+	}
+
+}
+
+void	manage_edit_button(t_button *button, SDL_MouseButtonEvent mouse, t_game *game)
+{
+	if (button_click(button, mouse) == 1)
+	{
+		if (button->id == 1 && button->clicked == 0)
+		{
+			game->E_STATE = NEXT;
+			button->clicked = 1;
+		}
+		if (button->id == 2 && button->clicked == 0)
+		{
+			game->E_STATE = BRUSH;
+			button->clicked = 1;
+		}
+		if (button->id == 3 && button->clicked == 0)
+		{
+			game->E_STATE = COLOR;
+			button->clicked = 1;
+		}
+	}
+	else
+		button->clicked = 0;
+}
+
+void	manage_menu_button(t_button* button, SDL_MouseButtonEvent mouse, t_game *game)
 {
 	if (button_click(button, mouse) == 1)
 	{
@@ -722,22 +775,32 @@ void	manage_button(t_button* button, SDL_MouseButtonEvent mouse, t_game *game)
 			button->clicked = 1;
 		}
 		if (button->id == 3 && button->clicked == 0)
-		{
 			quit_doom(game);
-		}
 	}
 	else
 		button->clicked = 0;
 }
 
-void	act_button(t_list_head *button_list, SDL_MouseButtonEvent mouse, t_game *game)
+void	act_edit_button(t_list_head *button_list, SDL_MouseButtonEvent mouse, t_game *game)
 {
 	t_list_head	*pos;
 
 	pos = button_list->next;
 	while (pos != button_list)
 	{
-		manage_button(((t_button*)pos), mouse, game);
+		manage_edit_button(((t_button*)pos), mouse, game);
+		pos = pos->next;
+	}
+}
+
+void	act_menu_button(t_list_head *button_list, SDL_MouseButtonEvent mouse, t_game *game)
+{
+	t_list_head	*pos;
+
+	pos = button_list->next;
+	while (pos != button_list)
+	{
+		manage_menu_button(((t_button*)pos), mouse, game);
 		pos = pos->next;
 	}
 }
@@ -829,9 +892,11 @@ int main(int argc, char **argv)
 	pos.y += 120;
 	add_button_menu(pos, 200, 100, &edit_button_list);
 	// add_button_menu(pos, 400, 80, &button_list);
+	t_point	pointa;
+	t_point	pointb;
 	// goto Quit;
 	while(!quit)
-	{	
+	{
 		if (game.STATE == MENU)
 			cursor = 1;
 		if (game.STATE == GAME)
@@ -847,12 +912,15 @@ int main(int argc, char **argv)
 			//render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
 		{
 			draw_menu(&game.screen, bg);
-			act_button(&button_list, game.SDL.e.button, &game);
+			act_menu_button(&button_list, game.SDL.e.button, &game);
 			render_menu(&game.screen, &button_list, game.SDL.e.button);
 		}
 		if (game.STATE == EDIT)
 		{
+			if (game.E_STATE == BRUSH)
+				brush_height(&game, &map, game.SDL.e.button);
 			draw_edit(&game.screen, &map, bg);
+			act_edit_button(&edit_button_list, game.SDL.e.button, &game);
 			render_menu(&game.screen, &edit_button_list, game.SDL.e.button);
 		}
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
