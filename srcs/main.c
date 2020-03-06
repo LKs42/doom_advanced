@@ -63,6 +63,9 @@ typedef enum	e_edit_state
 {
 	NEXT,
 	BRUSH,
+	BRUSH_FLAT,
+	BRUSH_HIGH,
+	BRUSH_DOWN,
 	COLOR,
 }				t_edit_state;
 
@@ -130,6 +133,49 @@ int pp_putint(int *pixel, int x, int y, int color)
 		return (0);
 	pixel[y * WIDTH + x] = color;
 	return (0);
+}
+
+void	ft_fill_circle(t_map *map, t_point c, int x, int y, int color)
+{
+	map->heightmap[(c.x + x) + (c.y + y) * map->width] = color;
+	map->heightmap[(c.x + y) + (c.y + x) * map->width] = color;
+	map->heightmap[(c.x - x) + (c.y + y) * map->width] = color;
+	map->heightmap[(c.x - y) + (c.y + x) * map->width] = color;
+	map->heightmap[(c.x + x) + (c.y - y) * map->width] = color;
+	map->heightmap[(c.x + y) + (c.y - x) * map->width] = color;
+	map->heightmap[(c.x - x) + (c.y - y) * map->width] = color;
+	map->heightmap[(c.x - y) + (c.y - x) * map->width] = color;
+}
+
+void		ft_fullcircle(t_map *map, t_point c, int r, int color)
+{
+	int	x;
+	int	y;
+	int	d;
+	float rayon = r;
+	float	res;
+	float	inc;
+	res = 0;
+	while (rayon >= 0)
+	{
+		inc = rayon / (PI / 2);
+		x = 0;
+		y = rayon;
+		d = rayon - 1;
+		color += cosf(res) + 1;
+		res += inc * 2;
+		while (y >= x)
+		{
+			ft_fill_circle(map, c, x, y, color);
+			if (d >= 2 * x)
+				d -= 2 * x++ + 1;
+			else if (d < 2 * (rayon - y))
+				d += 2 * y-- - 1;
+			else
+				d += 2 * (y-- - x++ - 1);
+		}
+		rayon--;
+	}
 }
 
 void	pp_liner_int(int *pixel, t_point *a, t_point *b, int color)
@@ -554,10 +600,13 @@ int	game_event(t_game *game, t_player *player, int *quit, t_point *direction)
 
 int	deal_event(t_game *game, t_player *player, int *quit, t_point *direction)
 {
-	if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) *quit = 1;
-	if (game->SDL.e.type == SDL_QUIT) *quit = 1;
-	if (game->SDL.e.key.keysym.sym == SDLK_F1) game->STATE = GAME;
-	if (game->SDL.e.key.keysym.sym == SDLK_F2) game->STATE = MENU;
+	if (game->SDL.e.type == SDL_KEYDOWN)
+	{
+		if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) *quit = 1;
+		if (game->SDL.e.type == SDL_QUIT) *quit = 1;
+		if (game->SDL.e.key.keysym.sym == SDLK_F1) game->STATE = GAME;
+		if (game->SDL.e.key.keysym.sym == SDLK_F2) game->STATE = MENU;
+	}
 	if(game->STATE == GAME)
 		game_event(game, player, quit, direction);
 	return (0);
@@ -719,21 +768,73 @@ void	switch_menu_game(t_game *game)
 void	brush_height(t_game *game, t_map *map, SDL_MouseButtonEvent mouse)
 {
 	// int x = ((WIDTH - map->width) /2);
+	t_point	circle;
+	t_point	mouth;
 	int x = (WIDTH - map->width) / 2;
 	int y = (HEIGHT - map->height) / 2;
+	mouth.x = mouse.x;
+	mouth.y = mouse.y;
+	int	pos;
 
 	//int y = ((HEIGHT - map->height) /2);
 	
-	if (mouse.button == SDL_BUTTON_LEFT && mouse.state == SDL_PRESSED)
+	if (mouse.button == SDL_BUTTON_LEFT && mouse.type != SDL_MOUSEBUTTONUP)
 	{
 		if (mouse.x >= (WIDTH / 2 - map->width / 2) && mouse.x <= (WIDTH / 2 + map->width / 2))
-			//map->heightmap[(WIDTH / 2 - map->width / 2) - mouse.x + mouse.y * WIDTH] = 0xFFFFFF;
-			// map->heightmap[(mouse.y - (int)y) * map->width + (mouse.x - (int)x)] += 1;
-			for (int i = 0; i < 10; i++)
-				for (int j = 0; j < 10; j++)
-					map->heightmap[(mouse.y - (int)y + i) * map->width + (mouse.x - (int)x + j)] += 10;
+		{
+			pos = (mouse.y - (int)y) * map->width + (mouse.x - (int)x);
+			circle.x = (mouse.x - (int)x);
+			circle.y = (mouse.y - (int)circle.y - 20);
+			ft_fullcircle(map, circle, 20, map->heightmap[pos]);
+		}
+				// {
+				// 	pos = (mouse.y - (int)circle.y) * map->width + (mouse.x - (int)circle.x);
+				// 	if (game->E_STATE == BRUSH_HIGH)
+				// 		map->heightmap[pos] += 30;
+				// 	if (game->E_STATE == BRUSH_DOWN)
+				// 		map->heightmap[pos] -= 30;
+				// 	if (game->E_STATE == BRUSH_FLAT)
+				// 		map->heightmap[pos] = 30;
+				// }
 	}
 
+}
+
+// void	brush_height(t_game *game, t_map *map, SDL_MouseButtonEvent mouse)
+// {
+// 	// int x = ((WIDTH - map->width) /2);
+// 	int x = (WIDTH - map->width) / 2;
+// 	int y = (HEIGHT - map->height) / 2;
+// 	int	pos;
+
+// 	//int y = ((HEIGHT - map->height) /2);
+	
+// 	if (mouse.button == SDL_BUTTON_LEFT && mouse.type != SDL_MOUSEBUTTONUP)
+// 	{
+// 		if (mouse.x >= (WIDTH / 2 - map->width / 2) && mouse.x <= (WIDTH / 2 + map->width / 2))
+// 			//map->heightmap[(WIDTH / 2 - map->width / 2) - mouse.x + mouse.y * WIDTH] = 0xFFFFFF;
+// 			// map->heightmap[(mouse.y - (int)y) * map->width + (mouse.x - (int)x)] += 1;
+// 			for (int i = 0; i < 10; i++)
+// 				for (int j = 0; j < 10; j++)
+// 				{
+// 					pos = (mouse.y - (int)y + i) * map->width + (mouse.x - (int)x + j);
+// 					if (game->E_STATE == BRUSH_HIGH)
+// 						map->heightmap[pos] += 30;
+// 					if (game->E_STATE == BRUSH_DOWN)
+// 						map->heightmap[pos] -= 30;
+// 					if (game->E_STATE == BRUSH_FLAT)
+// 						map->heightmap[pos] = 30;
+// 				}
+// 	}
+
+// }
+
+int		if_brush(t_game *game)
+{
+	if (game->E_STATE == BRUSH || game->E_STATE == BRUSH_DOWN ||
+		game->E_STATE == BRUSH_FLAT || game->E_STATE == BRUSH_HIGH)
+		return (1);
+	return (0);
 }
 
 void	manage_edit_button(t_button *button, SDL_MouseButtonEvent mouse, t_game *game)
@@ -753,6 +854,21 @@ void	manage_edit_button(t_button *button, SDL_MouseButtonEvent mouse, t_game *ga
 		if (button->id == 3 && button->clicked == 0)
 		{
 			game->E_STATE = COLOR;
+			button->clicked = 1;
+		}
+		if (button->id == 4 && button->clicked == 0 && if_brush(game) == 1)
+		{
+			game->E_STATE = BRUSH_HIGH;
+			button->clicked = 1;
+		}
+		if (button->id == 5 && button->clicked == 0 && if_brush(game) == 1)
+		{
+			game->E_STATE = BRUSH_DOWN;
+			button->clicked = 1;
+		}
+		if (button->id == 6 && button->clicked == 0 && if_brush(game) == 1)
+		{
+			game->E_STATE = BRUSH_FLAT;
 			button->clicked = 1;
 		}
 	}
@@ -891,6 +1007,13 @@ int main(int argc, char **argv)
 	add_button_menu(pos, 200, 100, &edit_button_list);
 	pos.y += 120;
 	add_button_menu(pos, 200, 100, &edit_button_list);
+	pos.x = WIDTH - 200;
+	add_button_menu(pos, 200, 100, &edit_button_list);
+	pos.y -= 120;
+	add_button_menu(pos, 200, 100, &edit_button_list);
+	pos.y -= 120;
+	add_button_menu(pos, 200, 100, &edit_button_list);
+
 	// add_button_menu(pos, 400, 80, &button_list);
 	t_point	pointa;
 	t_point	pointb;
@@ -917,7 +1040,8 @@ int main(int argc, char **argv)
 		}
 		if (game.STATE == EDIT)
 		{
-			if (game.E_STATE == BRUSH)
+			if (game.E_STATE == BRUSH || game.E_STATE == BRUSH_DOWN || game.E_STATE == BRUSH_HIGH
+				|| game.E_STATE == BRUSH_FLAT)
 				brush_height(&game, &map, game.SDL.e.button);
 			draw_edit(&game.screen, &map, bg);
 			act_edit_button(&edit_button_list, game.SDL.e.button, &game);
