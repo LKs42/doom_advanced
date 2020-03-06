@@ -159,9 +159,9 @@ uint32_t	darken(uint32_t color, int p)
 	g = (color >> 8) & 255;
 	b = color & 255;
 
-	r -= p;
-	g -= p;
-	b -= p;
+	r /= p;
+	g /= p;
+	b /= p;
 
 	if (r < 0) r = 0;
 	if (g < 0) g = 0;
@@ -366,6 +366,12 @@ uint32_t	light(uint32_t color, float z, int distance, int value)
 	return (color);
 }
 
+void	fill_pixels(uint32_t *pixels, uint32_t color)
+{
+	for (int i = 0; i < HEIGHT * WIDTH; i++)
+		pixels[i] = color;
+}
+
 void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *background, t_bitmap_texture *hud)
 {
 	uint32_t *bg = background->pixels;
@@ -379,7 +385,8 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 	int scale_height = map->scale;
 	int distance = camera->view_distance;
 	memset(pixels, 0xFFFFFFFF, sizeof(uint32_t) * screen->width * screen->height);
-	draw_bg(pixels, bg);
+	//draw_bg(pixels, bg);
+	fill_pixels(pixels, 0x000000);
 	int mapwidthperiod = map->width - 1;
 	int mapheightperiod = map->height - 1;
 
@@ -407,7 +414,6 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 		{
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
 			float heightonscreen = ((*height) - map->heightmap[mapoffset]) * invz + (*horizon);
-			uint32_t d = 0x010101 * (z * 30 / distance);
 			draw_vertical_line(pixels, i, heightonscreen, hiddeny[i], light(colormap[mapoffset], z, distance, 10));
 			if (heightonscreen < hiddeny[i]) hiddeny[i] = heightonscreen;
 			plx += dx;
@@ -476,7 +482,7 @@ int	init_player(t_player *player, t_map *map)
 	player->pos.y = 100;
 	player->fov = 90;
 	player->horizon = 650;
-	player->view_distance = 500;
+	player->view_distance = 1000;
 	player->speed = 10;
 	return (0);
 }
@@ -554,7 +560,8 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 	if (game->SDL.e.type == SDL_MOUSEBUTTONDOWN)
 	{
 		if (game->SDL.e.button.button == SDL_BUTTON_LEFT)
-			printf("height:%d\n", player->pos.y);
+			//printf("height:%d\n", player->pos.y);
+			printf("horizon:%d\n", player->horizon);
 		if (game->SDL.e.button.button == SDL_BUTTON_RIGHT)
 			printf("x:%d y: %d\n", player->pos.x, player->pos.z);
 	}
@@ -869,7 +876,7 @@ int main(int argc, char **argv)
 	while(!game.quit)
 	{
 		currenttime = SDL_GetTicks();
-		avgFPS = (float)rendercount / ((float)currenttime / 1000);
+		avgFPS = (float)rendercount / ((float)currenttime / 1000.0f);
 		if (currenttime > lasttime + 1000)
 		{
 			printf("%f \n", avgFPS);
@@ -887,7 +894,10 @@ int main(int argc, char **argv)
 		process_input(&game, &player, &direction);
 		collision_height(map.heightmap, &player.pos, &player.pos.y, 1);
 		if (game.STATE == GAME)
+		{
 			render(&game.screen, &map, &player, bg, cockpit);
+			rendercount++;
+		}
 		if (game.STATE == MENU)
 			//render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
 		{
@@ -900,7 +910,6 @@ int main(int argc, char **argv)
 			draw_edit(&game.screen, &map, bg);
 			render_menu(&game.screen, &edit_button_list, game.SDL.e.button);
 		}
-		rendercount++;
 		SDL_UpdateTexture(game.SDL.texture, NULL, game.screen.pixels, game.screen.width * sizeof(uint32_t));
 		SDL_RenderClear(game.SDL.renderer);
 		SDL_RenderCopy(game.SDL.renderer, game.SDL.texture, NULL, NULL);
