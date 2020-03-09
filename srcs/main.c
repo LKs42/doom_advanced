@@ -232,7 +232,7 @@ int	get_blue(uint32_t color)
 	return (c);
 }
 
-void	draw_vertical_line(uint32_t *pixels, int x, int ytop, int ybot, uint32_t color)
+void	draw_vertical_line_bot(uint32_t *pixels, int x, int ytop, int ybot, uint32_t color)
 {
 	if (ytop > ybot)
 		return ;
@@ -244,6 +244,39 @@ void	draw_vertical_line(uint32_t *pixels, int x, int ytop, int ybot, uint32_t co
 		ybot = 0;
 	while (ytop < ybot)
 		pixels[(ytop++) * WIDTH + x] = color;
+}
+
+void	draw_vertical_line_top(uint32_t *pixels, int x, int ytop, int ybot, uint32_t color)
+{
+	int tmp;
+	if (ytop > ybot)
+		return ;
+	if (ytop < 0)
+		ytop = 0;
+	if (ybot < 0)
+		ybot = 0;
+	if (ybot > HEIGHT)
+		ybot = HEIGHT;
+	if (ytop > HEIGHT)
+		ytop = HEIGHT;
+	ytop -= HEIGHT / 2;
+	tmp = ytop;
+	ytop = (HEIGHT/2) - tmp;
+	ybot -= HEIGHT / 2;
+	tmp = ybot;
+	ybot = (HEIGHT/2) - ybot;
+	if (ytop < ybot)
+		return ;
+	if (ytop < 0)
+		ytop = 0;
+	if (ybot < 0)
+		ybot = 0;
+	if (ybot > HEIGHT)
+		ybot = HEIGHT;
+	if (ytop > HEIGHT)
+		ytop = HEIGHT;
+	while (ytop > ybot)
+		pixels[(--ytop) * WIDTH + x] = color;
 }
 
 uint32_t nocturne(uint32_t c)
@@ -384,11 +417,12 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 	int *horizon = &camera->horizon;
 	int scale_height = map->scale;
 	int distance = camera->view_distance;
-	memset(pixels, 0xFFFFFFFF, sizeof(uint32_t) * screen->width * screen->height);
+	memset(pixels, 0x000000, sizeof(uint32_t) * screen->width * screen->height);
 	//draw_bg(pixels, bg);
-	fill_pixels(pixels, 0x000000);
+	//fill_pixels(pixels, 0x000000);
 	int mapwidthperiod = map->width - 1;
 	int mapheightperiod = map->height - 1;
+
 
 	float sinang = sin(*phi);
 	float cosang = cos(*phi);
@@ -397,6 +431,9 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 	uint32_t hiddeny[screen->width];
 	for(int i = 0; i < screen->width; i++)
 		hiddeny[i] = screen->height;
+	uint32_t hiddeny2[screen->width];
+	for(int i = 0; i < screen->width; i++)
+		hiddeny2[i] = screen->height;
 
 	for(float z=1; z < distance; z += deltaz)
 	{
@@ -413,9 +450,13 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 		for(int i=0; i < screen->width; i++)
 		{
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
-			float heightonscreen = ((*height) - map->heightmap[mapoffset]) * invz + (*horizon);
-			draw_vertical_line(pixels, i, heightonscreen, hiddeny[i], light(colormap[mapoffset], z, distance, 10));
+			float heightonscreen = ((*height) - map->heightmap[mapoffset]) * invz + (*horizon + 512);
+			float heightonscreen2 = ((400 -*height) - map->heightmap[mapoffset]) * invz - (*horizon - 512);
+			draw_vertical_line_top(pixels, i, heightonscreen2, hiddeny2[i], light(colormap[mapoffset], z, distance, 10));
+			draw_vertical_line_bot(pixels, i, heightonscreen, hiddeny[i], light(colormap[mapoffset], z, distance, 10));
 			if (heightonscreen < hiddeny[i]) hiddeny[i] = heightonscreen;
+			if (heightonscreen2 < hiddeny2[i]) hiddeny2[i] = heightonscreen2;
+			if (hiddeny[i] > hiddeny2[i]) hiddeny[i] = hiddeny2[i];
 			plx += dx;
 			ply += dy;
 		}
@@ -560,8 +601,8 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 	if (game->SDL.e.type == SDL_MOUSEBUTTONDOWN)
 	{
 		if (game->SDL.e.button.button == SDL_BUTTON_LEFT)
-			//printf("height:%d\n", player->pos.y);
-			printf("horizon:%d\n", player->horizon);
+			printf("height:%d\n", player->pos.y);
+//			printf("horizon:%d\n", player->horizon);
 		if (game->SDL.e.button.button == SDL_BUTTON_RIGHT)
 			printf("x:%d y: %d\n", player->pos.x, player->pos.z);
 	}
@@ -582,10 +623,10 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 
 int	deal_event(t_game *game, t_player *player, t_point *direction)
 {
+	if (game->SDL.e.type == SDL_QUIT) game->quit = 1;
 	if (game->SDL.e.type == SDL_KEYUP)
 	{
 		if (game->SDL.e.key.keysym.sym == SDLK_ESCAPE) game->quit = 1;
-		if (game->SDL.e.type == SDL_QUIT) game->quit = 1;
 		if (game->SDL.e.key.keysym.sym == SDLK_F1) game->STATE = GAME;
 		if (game->SDL.e.key.keysym.sym == SDLK_F2) game->STATE = MENU;
 	}

@@ -47,7 +47,7 @@ INCLUDES	:=	-I includes
 
 #COMPILATION
 CC			=	gcc
-CFLAGS		:=#	-Wall -Werror -Wextra
+CFLAGS		:= -g3 #	-Wall -Werror -Wextra
 LDFLAGS		:=#	-Wall -Werror -Wextra
 
 #LIBRARIES
