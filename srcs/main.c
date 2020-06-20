@@ -232,7 +232,7 @@ int	get_blue(uint32_t color)
 	return (c);
 }
 
-void	draw_vertical_line_bot(uint32_t *pixels, int x, int ytop, int ybot, uint32_t color)
+void	draw_vertical_line(uint32_t *pixels, int x, int ytop, int ybot, uint32_t color)
 {
 	if (ytop > ybot)
 		return ;
@@ -244,39 +244,6 @@ void	draw_vertical_line_bot(uint32_t *pixels, int x, int ytop, int ybot, uint32_
 		ybot = 0;
 	while (ytop < ybot)
 		pixels[(ytop++) * WIDTH + x] = color;
-}
-
-void	draw_vertical_line_top(uint32_t *pixels, int x, int ytop, int ybot, uint32_t color)
-{
-	int tmp;
-	if (ytop > ybot)
-		return ;
-	if (ytop < 0)
-		ytop = 0;
-	if (ybot < 0)
-		ybot = 0;
-	if (ybot > HEIGHT)
-		ybot = HEIGHT;
-	if (ytop > HEIGHT)
-		ytop = HEIGHT;
-	ytop -= HEIGHT / 2;
-	tmp = ytop;
-	ytop = (HEIGHT/2) - tmp;
-	ybot -= HEIGHT / 2;
-	tmp = ybot;
-	ybot = (HEIGHT/2) - ybot;
-	if (ytop < ybot)
-		return ;
-	if (ytop < 0)
-		ytop = 0;
-	if (ybot < 0)
-		ybot = 0;
-	if (ybot > HEIGHT)
-		ybot = HEIGHT;
-	if (ytop > HEIGHT)
-		ytop = HEIGHT;
-	while (ytop > ybot)
-		pixels[(--ytop) * WIDTH + x] = color;
 }
 
 uint32_t nocturne(uint32_t c)
@@ -451,12 +418,8 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 		{
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
 			float heightonscreen = ((*height) - map->heightmap[mapoffset]) * invz + (*horizon + 512);
-			float heightonscreen2 = ((400 -*height) - map->heightmap[mapoffset]) * invz - (*horizon - 512);
-			draw_vertical_line_top(pixels, i, heightonscreen2, hiddeny2[i], light(colormap[mapoffset], z, distance, 10));
-			draw_vertical_line_bot(pixels, i, heightonscreen, hiddeny[i], light(colormap[mapoffset], z, distance, 10));
+			draw_vertical_line(pixels, i, heightonscreen, hiddeny[i], light(colormap[mapoffset], z, distance, 10));
 			if (heightonscreen < hiddeny[i]) hiddeny[i] = heightonscreen;
-			if (heightonscreen2 < hiddeny2[i]) hiddeny2[i] = heightonscreen2;
-			if (hiddeny[i] > hiddeny2[i]) hiddeny[i] = hiddeny2[i];
 			plx += dx;
 			ply += dy;
 		}
