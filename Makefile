@@ -62,10 +62,14 @@ SDL			=	$(SDL_FOLDER)/build
 INCLUDES	:=	$(INCLUDES) -I $(SDL_FOLDER)/include
 LDFLAGS		:=	$(LDFLAGS) -L $(SDL_FOLDER) `sdl2-config --cflags --libs`
 
-
+#	TTF
+TTF_FOLDER	=	./SDL2_ttf-2.0.15
+TTF			=	$(TTF_FOLDER)/libSDL2_ttf.la
+INCLUDES	:=	$(INCLUDES) -I $(TTF_FOLDER)/.
+LDFLAGS		:=	$(LDFLAGS) -L $(TTF_FOLDER) `sdl-config --libs`
 
 #****************	RULES	****************
-all: $(SDL) $(LIBFT) $(EXEC)
+all: $(SDL) $(TTF) $(LIBFT) $(EXEC)
 
 $(EXEC): $(OBJS)
 	@$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
@@ -83,10 +87,16 @@ $(SDL):
 	./configure > /dev/null &&\
 	make > /dev/null;
 
+$(TTF):
+	@printf "compiling TTF is it working ??\n";
+	@cd $(TTF_FOLDER) &&\
+	./configure > /dev/null &&\
+	make > /dev/null;
+
 cl:
 	@rm -rf $(OBJS_FOLDER)
 
-clean: libft-clean sdl-clean
+clean: libft-clean sdl-clean ttf-clean
 	@rm -rf $(OBJS_FOLDER)
 
 libft-clean:
@@ -96,10 +106,13 @@ sdl-clean:
 	@cd $(SDL_FOLDER) &&\
 	make clean > /dev/null;
 
+ttf-clean:
+	@make -C $(TTF_FOLDER) clean > /dev/null
+
 fcl: cl
 	@rm -rf $(EXEC)
 
-fclean: clean libft-fclean sdl-fclean
+fclean: clean libft-fclean sdl-fclean ttf-fclean
 	@rm -rf $(EXEC)
 
 libft-fclean:
@@ -107,6 +120,10 @@ libft-fclean:
 
 sdl-fclean:
 	@cd $(SDL_FOLDER);\
+	make clean > /dev/null
+
+ttf-fclean:
+	@cd $(TTF_FOLDER);\
 	make clean > /dev/null
 
 r: cl all
