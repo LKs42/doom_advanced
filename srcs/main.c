@@ -14,6 +14,7 @@
 #define MAPEXPOSANT 1
 //#define WIDTH (HEIGHT * RATIO)
 #include <math.h>
+//test
 
 typedef struct	s_point
 {
