@@ -62,8 +62,6 @@ SDL			=	$(SDL_FOLDER)/build
 INCLUDES	:=	$(INCLUDES) -I $(SDL_FOLDER)/include
 LDFLAGS		:=	$(LDFLAGS) -L $(SDL_FOLDER) `sdl2-config --cflags --libs`
 
-
-
 #****************	RULES	****************
 all: $(SDL) $(LIBFT) $(EXEC)
 
