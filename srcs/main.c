@@ -40,6 +40,15 @@ typedef struct	s_map
 	uint32_t *colormap;
 }		t_map;
 
+typedef	struct s_arme
+{
+	char	*name;
+	int	munitions;
+	int	chargeur;
+	int chargeur_size;
+	int degats;
+}		t_arme;
+
 typedef struct	s_player
 {
 	int life;
@@ -49,6 +58,7 @@ typedef struct	s_player
 	int view_distance;
 	float speed;
 	float view_direction;
+	t_arme	curr_weapon;
 }		t_player;
 
 typedef enum e_GAME_STATE
@@ -467,6 +477,36 @@ int	compute_distance(int x1, int y1, int x2, int y2)
 	y_dist = abs(y2 - y1);
 
 	return((int)sqrt((x_dist * x_dist) + (y_dist * y_dist)));
+}
+
+int	use_ammo(t_player *player, int nb_ammo)
+{
+	if(player->curr_weapon.chargeur < nb_ammo)
+		return(0)
+	player->curr_weapon.chargeur -= nb_ammo;
+	return (1);
+}
+
+int	reload(t_player *player)
+{
+	int bullet_needed;
+
+	bullet_needed = player->curr_weapon.chargeur_size - player->curr_weapon.chargeur;
+	if bullet_needed == 0;
+		returb (1);
+	if(player->curr_weapon.chargeur == player->curr_weapon.chargeur_size)
+		return (0);
+	if(player->curr_weapon.munitions == 0)
+		return (-1);
+	if (bullet_needed > player->curr_weapon.munitions)
+	{
+		player->curr_weapon.chargeur += player->curr_weapon.munitions;
+		player->curr_weapon.munitions = 0;
+		return(1);
+	}
+	player->curr_weapon.chargeur += bullet_needed;
+	player->curr_weapon.munitions -= bullet_needed;
+	return (1);
 }
 
 uint32_t	light(uint32_t color, float z, int distance, int value)
@@ -1164,6 +1204,16 @@ int main(int argc, char **argv)
 	memset(game.screen.pixels, 0x00000000, game.screen.height * game.screen.width * sizeof(uint32_t));
 	t_player player;
 	init_player(&player, &map);
+
+	t_arme gun;
+	gun.name = "ok";
+	gun.munitions = 100;
+	gun.chargeur = 12;
+	gun.chargeur_size = 12;
+	gun.degats = 10;
+
+	player.curr_weapon = &gun;
+
 	int cursor = 0;
 	t_point direction;
 	direction.x = 0;
