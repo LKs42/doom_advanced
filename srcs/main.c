@@ -482,7 +482,7 @@ int	compute_distance(int x1, int y1, int x2, int y2)
 int	use_ammo(t_player *player, int nb_ammo)
 {
 	if(player->curr_weapon.chargeur < nb_ammo)
-		return(0)
+		return(0);
 	player->curr_weapon.chargeur -= nb_ammo;
 	return (1);
 }
@@ -492,8 +492,8 @@ int	reload(t_player *player)
 	int bullet_needed;
 
 	bullet_needed = player->curr_weapon.chargeur_size - player->curr_weapon.chargeur;
-	if bullet_needed == 0;
-		returb (1);
+	if (bullet_needed == 0)
+		return (1);
 	if(player->curr_weapon.chargeur == player->curr_weapon.chargeur_size)
 		return (0);
 	if(player->curr_weapon.munitions == 0)
@@ -731,6 +731,11 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 	{
 		if (game->SDL.e.key.keysym.sym == SDLK_LSHIFT)
 			player->speed = 10;
+		if (game->SDL.e.key.keysym.sym == SDLK_e)
+			use_ammo(player, 1);
+		if (game->SDL.e.key.keysym.sym == SDLK_r)
+			reload(player);
+		printf("munition = %d, chargeur = %d, chargeur size = %d, name = %s, degat = %d\n", player->curr_weapon.munitions, player->curr_weapon.chargeur, player->curr_weapon.chargeur_size, player->curr_weapon.name, player->curr_weapon.degats);
 	}
 	if (game->SDL.e.type == SDL_MOUSEBUTTONDOWN)
 	{
@@ -1212,7 +1217,7 @@ int main(int argc, char **argv)
 	gun.chargeur_size = 12;
 	gun.degats = 10;
 
-	player.curr_weapon = &gun;
+	player.curr_weapon = gun;
 
 	int cursor = 0;
 	t_point direction;
