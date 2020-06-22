@@ -12,6 +12,10 @@
 #define HEIGHT 1080
 #define WIDTH 1920
 #define MAPEXPOSANT 1
+#define FRONT 0
+#define LEFT 1
+#define BEHIND 2
+#define RIGHT 3
 //#define WIDTH (HEIGHT * RATIO)
 #include <math.h>
 //test
@@ -142,6 +146,27 @@ float lerp(float v0, float v1, float t)
 	return (1 - t) * v0 + t * v1;
 }
 
+void	scale_sprite(uint32_t *pixels, uint32_t *sources, int w1, int h1, int w2, int h2)
+{
+    // int	*temp = new int[w2*h2];
+	int	size;
+    double	px, py ; 
+    double	x_ratio; 
+	double	y_ratio;
+
+	x_ratio = w1 / (double)w2;
+    y_ratio = h1 / (double)h2;
+	size = w2 * h2;
+    for (int i = 0; i < h2; i++)
+	{
+        for (int j = 0; j < w2; j++)
+		{
+            px = floorf(j * x_ratio);
+            py = floorf(i * y_ratio);
+            pixels[(i * w2) + j] = sources[(int)((py * w1) + px)];
+        }
+    }
+}
 
 void			display_sprite(t_spritesheet *ss ,int num, uint32_t *screen, int posx, int posy)
 {
@@ -170,6 +195,8 @@ void		animate_sprite(t_animation *anim, t_spritesheet *ss, uint32_t *pixels, int
 	display_sprite(ss, line + anim->frame, pixels, x, y);
 	printf("index = %d\n", line + anim->frame);
 	anim->frame++;
+	// if (anim->speed == 2)
+	// 	anim->frame /= 9;
 	if (anim->frame == ss->sprite_line)
 		anim->frame = 0;
 }
@@ -1336,10 +1363,10 @@ int main(int argc, char **argv)
 	t_animation		walk_front;
 	t_animation		walk_behind;
 
-	walk_front = load_anim(0, testss->sprite_line, 0);
-	walk_left = load_anim(1, testss->sprite_line, 0);
-	walk_behind = load_anim(2, testss->sprite_line, 0);
-	walk_right = load_anim(3, testss->sprite_line, 0);
+	walk_front = load_anim(FRONT, testss->sprite_line, 2);
+	walk_left = load_anim(LEFT, testss->sprite_line, 0);
+	walk_behind = load_anim(BEHIND, testss->sprite_line, 0);
+	walk_right = load_anim(RIGHT, testss->sprite_line, 0);
 	init_map(&map,	load_bmp("assets/maps/volcano/heightmap.bmp"),
 			load_bmp("assets/maps/volcano/colormap.bmp"),
 			"volcano");
@@ -1407,11 +1434,12 @@ int main(int argc, char **argv)
 		if (game.STATE == GAME)
 		{
 			render(&game.screen, &map, &player, bg, cockpit);
-			display_ss(testss, game.screen.pixels, game.screen.width);
+			// display_ss(testss, game.screen.pixels, game.screen.width);
 			animate_sprite(&walk_front, testss, game.screen.pixels, 200, 500);
 			animate_sprite(&walk_left, testss, game.screen.pixels, 270, 500);
 			animate_sprite(&walk_behind, testss, game.screen.pixels, 340, 500);
 			animate_sprite(&walk_right, testss, game.screen.pixels, 410, 500);
+			scale_sprite(game.screen.pixels, testss->sprite[19], testss->sprite_w, testss->sprite_h, 128, 128);
 			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
 			// display_sprite(testss, 1, game.screen.pixels, 64, 64);
 			// display_sprite(testss, 2, game.screen.pixels, 128, 128);
