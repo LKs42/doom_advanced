@@ -16,6 +16,19 @@
 #include <math.h>
 //test
 
+typedef struct	s_spritesheet
+{
+	uint32_t	*pixels;
+	uint32_t	**sprite;
+	int			nb_sprite;
+	int			sheet_w;
+	int			sheet_h;
+	int			sprite_w;
+	int			sprite_h;
+	int			sprite_line;
+	int			sprite_height;
+}				t_spritesheet;
+
 typedef struct	s_point
 {
 	int x;
@@ -118,6 +131,129 @@ typedef struct s_monster
 float lerp(float v0, float v1, float t)
 {
 	return (1 - t) * v0 + t * v1;
+}
+
+void			display_sprite(t_spritesheet *ss ,int num, uint32_t *screen, int posx, int posy)
+{
+	int	x;
+	int	y;
+	x = 0;
+	y = 0;
+	ft_putendl("coucou je suis bien dans display_sprite");
+	for (int i = 0; i < ss->sprite_h; i++)
+    {
+        for (int j = 0; j < ss->sprite_w; j++)
+        {
+            screen[(i + posy) * WIDTH + (j + posx)] =  ss->sprite[num][i * ss->sprite_w + j];
+        }
+    }
+}
+
+void			display_ss(t_spritesheet *ss, uint32_t *pixels, int size)
+{
+	// int	i;
+	// int	j;
+	// int	x;
+
+	// i = 0;
+	// j = 0;
+	// x = 0;
+	// while (i < ss->sheet_h)
+	// {
+	// 	while (j < ss->sheet_w)
+	// 	{
+	// 		pixels[j + i * WIDTH] = ss->pixels[x];
+	// 		j++;
+	// 		x++;
+	// 	}
+	// 	j = 0;
+	// 	i++;
+	// }
+	ft_putendl("coucou je suis vien dednas iuy c'est de kja lfeisse lzrdsz dze ra maez la pirz");
+	int	x;
+	int	y;
+	x = 0;
+	y = 0;
+
+	for (int i = 0; i < ss->sheet_h; i++)
+    {
+        for (int j = 0; j < ss->sheet_w; j++)
+        {
+            pixels[(i + y) * WIDTH + (j + x)] =  ss->pixels[i * ss->sheet_w + j];
+        }
+    }
+}
+
+void		grab_sprite(t_spritesheet *ss, int num)
+{
+	int	i;
+	int	j;
+	int	x;
+	// int	y;
+	int	startx;
+	int	starty;
+	int	size;
+
+	i = 0;
+	j = 0;
+	x = 0;
+	// y = 0;
+	startx = num * ss->sprite_w;
+	starty = (num / ss->sprite_line) * ss->sprite_h;
+	// if (startx >= ss->sheet_w)
+	// 	starty = startx/ss->sheet_w;
+	printf("num = %d, spritew = %d, spriteh = %d, startx = %d, starty = %d, ssw = %d, ssh = %d\n", num, ss->sprite_w, ss->sprite_h, startx, starty,ss->sheet_w, ss->sheet_h);
+	printf("index = %d, sprite_line = %d, sprite_height = %d\n", startx + j + (i + starty) * (ss->sheet_w), ss->sprite_line, ss->sprite_height);
+	while (i < ss->sprite_h)
+	{
+		while (j < ss->sprite_w)
+		{
+			ss->sprite[num][x] = ss->pixels[startx + j + (i + starty) * (ss->sheet_w)];
+			j++;
+			x++;
+		}
+		j = 0;
+		i++;
+	}
+}
+
+t_spritesheet	*load_spritesheet(char *path, int nb_sprite, int line, int height)
+{
+	t_bitmap_texture	*bmp_tex;
+	t_spritesheet		*ss;
+	int					i;
+	int					j;
+
+	i = 0;
+	j = 0;
+	if ((bmp_tex = load_bmp(path)) == NULL)
+		return (throw_null("load_spritesheet", "failed to load spritesheet"));
+	if (!(ss = malloc(sizeof(t_spritesheet))))
+		(throw_null("load_spritesheet", "failed to malloc spritesheet"));
+	ss->sprite_line = line;
+	ss->sprite_height = height;
+	ss->pixels = bmp_tex->pixels;
+	ss->sheet_w = bmp_tex->head.width;
+	ss->sheet_h = bmp_tex->head.height;
+	ss->sprite_w = bmp_tex->head.width / line;
+	ss->sprite_h = bmp_tex->head.height / height;
+	if (!(ss->sprite = malloc(sizeof(uint32_t) * (nb_sprite))))
+		(throw_null("load_spritesheet", "failed to malloc sprite"));
+	while (i < nb_sprite)
+	{
+		if (!(ss->sprite[i] = malloc(sizeof(uint32_t) * ((bmp_tex->head.width / line) * (bmp_tex->head.height / height)))))
+			(throw_null("load_spritesheet", "failed to malloc sprite"));
+		i++;
+	}
+	i = 0;
+	while (i < nb_sprite)
+	{
+		ft_putendl("avant");
+		grab_sprite(ss, i);
+		i++;
+		ft_putendl("apres");
+	}
+	return (ss);
 }
 
 uint32_t	pp_get_SDLcolor(SDL_Color color)
@@ -1153,6 +1289,7 @@ int main(int argc, char **argv)
 
 	t_bitmap_texture *bg = load_bmp("assets/sky/sky1080.bmp");
 	t_bitmap_texture *cockpit = load_bmp("assets/cockpit1080.bmp");
+	t_spritesheet	*testss = load_spritesheet("sprite-sheet-png-walking-2.bmp", 36, 9, 4);
 	t_map map;
 	init_map(&map,	load_bmp("assets/maps/volcano/heightmap.bmp"),
 			load_bmp("assets/maps/volcano/colormap.bmp"),
@@ -1221,6 +1358,16 @@ int main(int argc, char **argv)
 		if (game.STATE == GAME)
 		{
 			render(&game.screen, &map, &player, bg, cockpit);
+			display_ss(testss, game.screen.pixels, game.screen.width);
+			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
+			// display_sprite(testss, 1, game.screen.pixels, 64, 64);
+			// display_sprite(testss, 2, game.screen.pixels, 128, 128);
+			// display_sprite(testss, 3, game.screen.pixels, 200, 200);
+			// display_sprite(testss, 4, game.screen.pixels, 264, 264);
+			// display_sprite(testss, 5, game.screen.pixels, 328, 328);
+			// display_sprite(testss, 6, game.screen.pixels, 400, 400);
+			display_sprite(testss, 15, game.screen.pixels, 500, 500);
+			display_sprite(testss, 26, game.screen.pixels, 600, 500);
 			rendercount++;
 		}
 		if (game.STATE == MENU)
