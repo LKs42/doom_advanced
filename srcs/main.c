@@ -137,6 +137,7 @@ void			display_sprite(t_spritesheet *ss ,int num, uint32_t *screen, int posx, in
 {
 	int	x;
 	int	y;
+
 	x = 0;
 	y = 0;
 	ft_putendl("coucou je suis bien dans display_sprite");
@@ -144,7 +145,8 @@ void			display_sprite(t_spritesheet *ss ,int num, uint32_t *screen, int posx, in
     {
         for (int j = 0; j < ss->sprite_w; j++)
         {
-            screen[(i + posy) * WIDTH + (j + posx)] =  ss->sprite[num][i * ss->sprite_w + j];
+			if (ss->sprite[num][i * ss->sprite_w + j] != 0xFFFFFF)
+            	screen[(i + posy) * WIDTH + (j + posx)] =  ss->sprite[num][i * ss->sprite_w + j];
         }
     }
 }
@@ -193,12 +195,14 @@ void		grab_sprite(t_spritesheet *ss, int num)
 	int	startx;
 	int	starty;
 	int	size;
+	int	index;
 
 	i = 0;
 	j = 0;
 	x = 0;
 	// y = 0;
 	startx = num * ss->sprite_w;
+	startx %= ss->sheet_w;
 	starty = (num / ss->sprite_line) * ss->sprite_h;
 	// if (startx >= ss->sheet_w)
 	// 	starty = startx/ss->sheet_w;
@@ -208,7 +212,8 @@ void		grab_sprite(t_spritesheet *ss, int num)
 	{
 		while (j < ss->sprite_w)
 		{
-			ss->sprite[num][x] = ss->pixels[startx + j + (i + starty) * (ss->sheet_w)];
+			index = startx + j + (i + starty) * (ss->sheet_w);
+			ss->sprite[num][x] = ss->pixels[index];
 			j++;
 			x++;
 		}
@@ -1283,6 +1288,9 @@ int main(int argc, char **argv)
 {
 	t_game game;
 	t_SDL SDL;
+	int		z;
+
+	z = 0;
 	if (init_game(&game, &SDL, WIDTH, HEIGHT, "DOOM") == -1)
 		goto Quit;
 	int statut = EXIT_FAILURE;
@@ -1366,9 +1374,16 @@ int main(int argc, char **argv)
 			// display_sprite(testss, 4, game.screen.pixels, 264, 264);
 			// display_sprite(testss, 5, game.screen.pixels, 328, 328);
 			// display_sprite(testss, 6, game.screen.pixels, 400, 400);
-			display_sprite(testss, 15, game.screen.pixels, 500, 500);
-			display_sprite(testss, 26, game.screen.pixels, 600, 500);
+			display_sprite(testss, z, game.screen.pixels, WIDTH / 2, 700);
+			// display_sprite(testss, 9, game.screen.pixels, 500, 500);
+			// display_sprite(testss, 19, game.screen.pixels, 564, 500);
+			// display_sprite(testss, 18, game.screen.pixels, 620, 500);
+			// display_sprite(testss, 26, game.screen.pixels, 600, 500);
+			// display_sprite(testss, 36, game.screen.pixels, 500, 600);
 			rendercount++;
+			z++;
+			if (z == 35)
+				z = 0;
 		}
 		if (game.STATE == MENU)
 			//render_menu(&game.screen, list, game.SDL.e.button.x, game.SDL.e.button.y);
