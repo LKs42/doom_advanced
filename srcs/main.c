@@ -38,7 +38,7 @@ typedef struct	s_animation
 {
 	int			anim;
 	int			nb_sprite;
-	int			speed;
+	float		speed;
 	int			frame;
 }				t_animation;
 
@@ -170,11 +170,12 @@ float lerp(float v0, float v1, float t)
 
 void	scale_image(t_bitmap_texture *image, uint32_t *pixels, int x, int y, double coef)
 {
-	double	px, py ; 
-    double	x_ratio; 
+	double	px, py ;
+    double	x_ratio;
 	double	y_ratio;
 	double	h2;
 	double	w2;
+	int		index;
 
 	w2 = image->head.width * coef;
 	h2 = image->head.height * coef;
@@ -187,8 +188,9 @@ void	scale_image(t_bitmap_texture *image, uint32_t *pixels, int x, int y, double
 		{
             px = floorf(j * x_ratio);
             py = floorf(i * y_ratio);
-			if (image->pixels[(int)((py * image->head.width) + px)] != 0xFFFFFF)
-				pixels[j + x + ((i + y) * WIDTH)] = image->pixels[(int)((py * image->head.width) + px)];
+			index = (int)((py * image->head.width) + px);
+			if (image->pixels[index] != 0xFFFFFF)
+				pixels[j + x + ((i + y) * WIDTH)] = image->pixels[index];
         }
     }
 }
@@ -202,6 +204,7 @@ void	display_sprite(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int 
 	double	y_ratio;
 	double	h2;
 	double	w2;
+	int		index;
 
 	w2 = ss->sprite_w * coef;
 	h2 = ss->sprite_h * coef;
@@ -214,8 +217,9 @@ void	display_sprite(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int 
 		{
             px = floorf(j * x_ratio);
             py = floorf(i * y_ratio);
-			if (ss->sprite[num][(int)((py * ss->sprite_w) + px)] != 0xFFFFFF)
-				pixels[j + posx + ((i + posy) * WIDTH)] = ss->sprite[num][(int)((py * ss->sprite_w) + px)];
+			index = (int)((py * ss->sprite_w) + px);
+			if (ss->sprite[num][index] != 0xFFFFFF)
+				pixels[j + posx + ((i + posy) * WIDTH)] = ss->sprite[num][index];
         }
     }
 }
@@ -244,16 +248,20 @@ void		animate_sprite(t_animation *anim, t_spritesheet *ss, uint32_t *pixels, int
 	int	index;
 
 	line = ss->sprite_line * anim->anim;
-	display_sprite(pixels, ss, line + anim->frame, x, y, coef);
-	printf("index = %d\n", line + anim->frame);
+	display_sprite(pixels, ss, line + anim->frame * anim->speed, x, y, coef);
+	// printf("index = %d\n", line + anim->frame);
 	anim->frame++;
 	// if (anim->speed == 2)
 	// 	anim->frame /= 9;
-	if (anim->frame == ss->sprite_line)
+	// if (anim->frame == ss->sprite_line)
+	// 	anim->frame = 0;
+	// anim->frame /= ss->sprite_line;
+	if (anim->frame * anim->speed >= ss->sprite_line)
 		anim->frame = 0;
+	// printf("frame = %d\n", anim->frame);
 }
 
-t_animation		load_anim(int anim, int nb_sprite, int speed)
+t_animation		load_anim(int anim, int nb_sprite, float speed)
 {
 	t_animation ret;
 
@@ -753,7 +761,7 @@ void	fill_pixels(uint32_t *pixels, uint32_t color)
 		pixels[i] = color;
 }
 
-void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *background, t_bitmap_texture *hud)
+void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *background, t_bitmap_texture *hud, t_spritesheet *ss)
 {
 	uint32_t *bg = background->pixels;
 	uint32_t *cockpit = hud->pixels;
@@ -795,6 +803,7 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 		ply += player->z;
 		float invz = 1 / z * 240 * scale_height;
 		int mapoffset = 0;
+		if (!(z <= distance/4)) display_sprite(screen->pixels, ss, 18, WIDTH/2, HEIGHT/2, 2);
 		for(int i=0; i < screen->width; i++)
 		{
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
@@ -1415,10 +1424,10 @@ int main(int argc, char **argv)
 	t_animation		walk_front;
 	t_animation		walk_behind;
 
-	walk_front = load_anim(FRONT, testss->sprite_line, 2);
-	walk_left = load_anim(LEFT, testss->sprite_line, 0);
-	walk_behind = load_anim(BEHIND, testss->sprite_line, 0);
-	walk_right = load_anim(RIGHT, testss->sprite_line, 0);
+	walk_front = load_anim(FRONT, testss->sprite_line, 0.5);
+	walk_left = load_anim(LEFT, testss->sprite_line, 1);
+	walk_behind = load_anim(BEHIND, testss->sprite_line, 2);
+	walk_right = load_anim(RIGHT, testss->sprite_line, 3);
 	init_map(&map,	load_bmp("assets/maps/volcano/heightmap.bmp"),
 			load_bmp("assets/maps/volcano/colormap.bmp"),
 			"volcano");
@@ -1485,13 +1494,13 @@ int main(int argc, char **argv)
 		collision_height(map.heightmap, &player.pos, &player.pos.y, 1);
 		if (game.STATE == GAME)
 		{
-			render(&game.screen, &map, &player, bg, cockpit);
+			render(&game.screen, &map, &player, bg, cockpit, testss);
 			// display_ss(testss, game.screen.pixels, game.screen.width);
-			animate_sprite(&walk_front, testss, game.screen.pixels, 0, 500, 1);
-			animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500, 2);
-			animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500, 3);
-			animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500, 4);
-			scale_image(cockpit, game.screen.pixels, 0, 0, 0.5);
+			// animate_sprite(&walk_front, testss, game.screen.pixels, 0, 500, 4);
+			// animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500, 4);
+			// animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500, 4);
+			// animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500, 4);
+			// scale_image(cockpit, game.screen.pixels, 0, 0, 0.5);
 			// display_sprite(game.screen.pixels, testss, 19, 500, 200, 7);
 			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
 			// display_sprite(testss, 1, game.screen.pixels, 64, 64);
