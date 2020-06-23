@@ -146,45 +146,71 @@ float lerp(float v0, float v1, float t)
 	return (1 - t) * v0 + t * v1;
 }
 
-void	scale_sprite(uint32_t *pixels, uint32_t *sources, int w1, int h1, int w2, int h2)
+// void	display_sprite(uint32_t *pixels, uint32_t *sources, int w1, int h1, int w2, int h2)
+// {
+//     // int	*temp = new int[w2*h2];
+// 	int	size;
+//     double	px, py ; 
+//     double	x_ratio; 
+// 	double	y_ratio;
+
+// 	x_ratio = w1 / (double)w2;
+//     y_ratio = h1 / (double)h2;
+// 	size = w2 * h2;
+//     for (int i = 0; i < h2; i++)
+// 	{
+//         for (int j = 0; j < w2; j++)
+// 		{
+//             px = floorf(j * x_ratio);
+//             py = floorf(i * y_ratio);
+//             pixels[j + (i * WIDTH)] = sources[(int)((py * w1) + px)];
+//         }
+//     }
+// }
+void	display_sprite(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int posy, double coef)
 {
     // int	*temp = new int[w2*h2];
-	int	size;
+	// int	size;
     double	px, py ; 
     double	x_ratio; 
 	double	y_ratio;
+	double	h2;
+	double	w2;
 
-	x_ratio = w1 / (double)w2;
-    y_ratio = h1 / (double)h2;
-	size = w2 * h2;
+	w2 = ss->sprite_w * coef;
+	h2 = ss->sprite_h * coef;
+	x_ratio = ss->sprite_w / w2;
+    y_ratio = ss->sprite_h / h2;
+	// size = w2 * h2;
     for (int i = 0; i < h2; i++)
 	{
         for (int j = 0; j < w2; j++)
 		{
             px = floorf(j * x_ratio);
             py = floorf(i * y_ratio);
-            pixels[(i * w2) + j] = sources[(int)((py * w1) + px)];
+			if (ss->sprite[num][(int)((py * ss->sprite_w) + px)] != 0xFFFFFF)
+				pixels[j + posx + ((i + posy) * WIDTH)] = ss->sprite[num][(int)((py * ss->sprite_w) + px)];
         }
     }
 }
 
-void			display_sprite(t_spritesheet *ss ,int num, uint32_t *screen, int posx, int posy)
-{
-	int	x;
-	int	y;
+// void			display_sprite(t_spritesheet *ss ,int num, uint32_t *screen, int posx, int posy)
+// {
+// 	int	x;
+// 	int	y;
 
-	x = 0;
-	y = 0;
-	// ft_putendl("coucou je suis bien dans display_sprite");
-	for (int i = 0; i < ss->sprite_h; i++)
-    {
-        for (int j = 0; j < ss->sprite_w; j++)
-        {
-			if (ss->sprite[num][i * ss->sprite_w + j] != 0xFFFFFF)
-            	screen[(i + posy) * WIDTH + (j + posx)] =  ss->sprite[num][i * ss->sprite_w + j];
-        }
-    }
-}
+// 	x = 0;
+// 	y = 0;
+// 	// ft_putendl("coucou je suis bien dans display_sprite");
+// 	for (int i = 0; i < ss->sprite_h; i++)
+//     {
+//         for (int j = 0; j < ss->sprite_w; j++)
+//         {
+// 			if (ss->sprite[num][i * ss->sprite_w + j] != 0xFFFFFF)
+//             	screen[(i + posy) * WIDTH + (j + posx)] =  ss->sprite[num][i * ss->sprite_w + j];
+//         }
+//     }
+// }
 
 void		animate_sprite(t_animation *anim, t_spritesheet *ss, uint32_t *pixels, int x, int y)
 {
@@ -192,7 +218,7 @@ void		animate_sprite(t_animation *anim, t_spritesheet *ss, uint32_t *pixels, int
 	int	index;
 
 	line = ss->sprite_line * anim->anim;
-	display_sprite(ss, line + anim->frame, pixels, x, y);
+	display_sprite(pixels, ss, line + anim->frame, x, y, 7);
 	printf("index = %d\n", line + anim->frame);
 	anim->frame++;
 	// if (anim->speed == 2)
@@ -1435,11 +1461,11 @@ int main(int argc, char **argv)
 		{
 			render(&game.screen, &map, &player, bg, cockpit);
 			// display_ss(testss, game.screen.pixels, game.screen.width);
-			animate_sprite(&walk_front, testss, game.screen.pixels, 200, 500);
-			animate_sprite(&walk_left, testss, game.screen.pixels, 270, 500);
-			animate_sprite(&walk_behind, testss, game.screen.pixels, 340, 500);
-			animate_sprite(&walk_right, testss, game.screen.pixels, 410, 500);
-			scale_sprite(game.screen.pixels, testss->sprite[19], testss->sprite_w, testss->sprite_h, 128, 128);
+			animate_sprite(&walk_front, testss, game.screen.pixels, 0, 500);
+			animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500);
+			animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500);
+			animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500);
+			// display_sprite(game.screen.pixels, testss, 19, 500, 200, 7);
 			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
 			// display_sprite(testss, 1, game.screen.pixels, 64, 64);
 			// display_sprite(testss, 2, game.screen.pixels, 128, 128);
