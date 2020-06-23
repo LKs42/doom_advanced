@@ -167,12 +167,38 @@ float lerp(float v0, float v1, float t)
 //         }
 //     }
 // }
+
+void	scale_image(t_bitmap_texture *image, uint32_t *pixels, int x, int y, double coef)
+{
+	double	px, py ; 
+    double	x_ratio; 
+	double	y_ratio;
+	double	h2;
+	double	w2;
+
+	w2 = image->head.width * coef;
+	h2 = image->head.height * coef;
+	x_ratio = image->head.width / w2;
+    y_ratio = image->head.height / h2;
+	// size = w2 * h2;
+    for (int i = 0; i < h2; i++)
+	{
+        for (int j = 0; j < w2; j++)
+		{
+            px = floorf(j * x_ratio);
+            py = floorf(i * y_ratio);
+			if (image->pixels[(int)((py * image->head.width) + px)] != 0xFFFFFF)
+				pixels[j + x + ((i + y) * WIDTH)] = image->pixels[(int)((py * image->head.width) + px)];
+        }
+    }
+}
+
 void	display_sprite(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int posy, double coef)
 {
     // int	*temp = new int[w2*h2];
 	// int	size;
-    double	px, py ; 
-    double	x_ratio; 
+    double	px, py ;
+    double	x_ratio;
 	double	y_ratio;
 	double	h2;
 	double	w2;
@@ -1465,6 +1491,7 @@ int main(int argc, char **argv)
 			animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500, 2);
 			animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500, 3);
 			animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500, 4);
+			scale_image(cockpit, game.screen.pixels, 0, 0, 0.5);
 			// display_sprite(game.screen.pixels, testss, 19, 500, 200, 7);
 			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
 			// display_sprite(testss, 1, game.screen.pixels, 64, 64);
