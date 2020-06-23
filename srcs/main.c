@@ -212,13 +212,13 @@ void	display_sprite(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int 
 //     }
 // }
 
-void		animate_sprite(t_animation *anim, t_spritesheet *ss, uint32_t *pixels, int x, int y)
+void		animate_sprite(t_animation *anim, t_spritesheet *ss, uint32_t *pixels, int x, int y, int coef)
 {
 	int	line;
 	int	index;
 
 	line = ss->sprite_line * anim->anim;
-	display_sprite(pixels, ss, line + anim->frame, x, y, 7);
+	display_sprite(pixels, ss, line + anim->frame, x, y, coef);
 	printf("index = %d\n", line + anim->frame);
 	anim->frame++;
 	// if (anim->speed == 2)
@@ -1461,10 +1461,10 @@ int main(int argc, char **argv)
 		{
 			render(&game.screen, &map, &player, bg, cockpit);
 			// display_ss(testss, game.screen.pixels, game.screen.width);
-			animate_sprite(&walk_front, testss, game.screen.pixels, 0, 500);
-			animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500);
-			animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500);
-			animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500);
+			animate_sprite(&walk_front, testss, game.screen.pixels, 0, 500, 1);
+			animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500, 2);
+			animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500, 3);
+			animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500, 4);
 			// display_sprite(game.screen.pixels, testss, 19, 500, 200, 7);
 			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
 			// display_sprite(testss, 1, game.screen.pixels, 64, 64);
