@@ -129,6 +129,7 @@ typedef struct s_button
 	int	id;
 	int	clicked;
 	uint32_t color;
+	t_bitmap_texture *texture;
 }		t_button;
 
 typedef struct		s_game
@@ -1078,12 +1079,13 @@ void	quit_doom(t_game *game)
 	exit(0);
 }
 
-t_button *button(int x, int y, int width, int height)
+t_button *button(int x, int y, int width, int height, char *path)
 {
 	t_button *result;
 
 	if(!(result = malloc(sizeof(t_button))))
 		return (NULL);
+	result->texture = load_bmp(path);
 	result->pos.x = x;
 	result->pos.y = y;
 	result->width = width;
@@ -1112,7 +1114,7 @@ void	add_button_menu(t_point pos, int width, int height, t_list_head *button_lis
 {
 	t_button	*nbutton;
 
-	nbutton = button(pos.x, pos.y, width, height);
+	nbutton = button(pos.x, pos.y, width, height, "assets/PLAY.BMP");
 	init_list_head(&nbutton->node);
 	if (button_list->next != button_list)
 		nbutton->id = ((t_button*)button_list->prev)->id + 1;
@@ -1131,10 +1133,10 @@ void	init_menu(t_list_head *button_list, int nb)
 
 	i = 0;
 	// size = 500;
-	height = HEIGHT / 2 - 500 / nb;
+	height = HEIGHT / 2 - 650 / nb;
 	while (i < nb)
 	{
-		nbutton = button(WIDTH/2 - 500/2, height, 500, 150);
+		nbutton = button(WIDTH/2  - 650/2, height, 650, 150, "assets/PLAY.bmp");
 		nbutton->id = i + 1;
 		init_list_head(&nbutton->node);
 		height += 190;
@@ -1184,9 +1186,11 @@ void	render_button(t_screen *screen, t_button *button, SDL_MouseButtonEvent mous
 		while(j < button->width)
 		{
 			if (button_click(button, mouse) == 1)
-				screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = 0xFF00FF00;
+				screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button->texture->pixels[i * button->texture->head.width + j] & 0xFF00FF00;
+				//screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = 0xFF00FF00;
 			else
-				screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, mouse.x, mouse.y) ? 0xFFFF00FF : 0xFF00FFFF;
+			//	screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, mouse.x, mouse.y) ? 0xFFFF00FF : 0xFF00FFFF;
+				screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, mouse.x, mouse.y) ?  button->texture->pixels[i * button->texture->head.width + j] & 0xFFFF0000 : button->texture->pixels[i * button->texture->head.width + j] ;
 			j++;
 		}
 		i++;
@@ -1546,7 +1550,7 @@ int main(int argc, char **argv)
 			animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500, 2);
 			animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500, 3);
 			animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500, 4);
-			scale_image(cockpit, game.screen.pixels, 0, 0, 0.5);
+			// scale_image(cockpit, game.screen.pixels, 0, 0, 0.5);
 			// display_sprite(game.screen.pixels, testss, 19, 500, 200, 7);
 			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
 			// display_sprite(testss, 1, game.screen.pixels, 64, 64);
