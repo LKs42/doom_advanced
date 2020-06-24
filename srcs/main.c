@@ -182,7 +182,7 @@ float lerp(float v0, float v1, float t)
 void	scale_image(t_bitmap_texture *image, uint32_t *pixels, int x, int y, double coef)
 {
 	double	px, py ; 
-    double	x_ratio; 
+	double	x_ratio; 
 	double	y_ratio;
 	double	h2;
 	double	w2;
@@ -190,26 +190,26 @@ void	scale_image(t_bitmap_texture *image, uint32_t *pixels, int x, int y, double
 	w2 = image->head.width * coef;
 	h2 = image->head.height * coef;
 	x_ratio = image->head.width / w2;
-    y_ratio = image->head.height / h2;
+	y_ratio = image->head.height / h2;
 	// size = w2 * h2;
-    for (int i = 0; i < h2; i++)
+	for (int i = 0; i < h2; i++)
 	{
-        for (int j = 0; j < w2; j++)
+		for (int j = 0; j < w2; j++)
 		{
-            px = floorf(j * x_ratio);
-            py = floorf(i * y_ratio);
+			px = floorf(j * x_ratio);
+			py = floorf(i * y_ratio);
 			if (image->pixels[(int)((py * image->head.width) + px)] != 0xFFFFFF)
 				pixels[j + x + ((i + y) * WIDTH)] = image->pixels[(int)((py * image->head.width) + px)];
-        }
-    }
+		}
+	}
 }
 
 void	display_sprite(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int posy, double coef)
 {
-    // int	*temp = new int[w2*h2];
+	// int	*temp = new int[w2*h2];
 	// int	size;
-    double	px, py ;
-    double	x_ratio;
+	double	px, py ;
+	double	x_ratio;
 	double	y_ratio;
 	double	h2;
 	double	w2;
@@ -217,18 +217,18 @@ void	display_sprite(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int 
 	w2 = ss->sprite_w * coef;
 	h2 = ss->sprite_h * coef;
 	x_ratio = ss->sprite_w / w2;
-    y_ratio = ss->sprite_h / h2;
+	y_ratio = ss->sprite_h / h2;
 	// size = w2 * h2;
-    for (int i = 0; i < h2; i++)
+	for (int i = 0; i < h2; i++)
 	{
-        for (int j = 0; j < w2; j++)
+		for (int j = 0; j < w2; j++)
 		{
-            px = floorf(j * x_ratio);
-            py = floorf(i * y_ratio);
+			px = floorf(j * x_ratio);
+			py = floorf(i * y_ratio);
 			if (ss->sprite[num][(int)((py * ss->sprite_w) + px)] != 0xFFFFFF)
 				pixels[j + posx + ((i + posy) * WIDTH)] = ss->sprite[num][(int)((py * ss->sprite_w) + px)];
-        }
-    }
+		}
+	}
 }
 
 // void			display_sprite(t_spritesheet *ss ,int num, uint32_t *screen, int posx, int posy)
@@ -302,12 +302,12 @@ void			display_ss(t_spritesheet *ss, uint32_t *pixels, int size)
 	y = 0;
 
 	for (int i = 0; i < ss->sheet_h; i++)
-    {
-        for (int j = 0; j < ss->sheet_w; j++)
-        {
-            pixels[(i + y) * WIDTH + (j + x)] =  ss->pixels[i * ss->sheet_w + j];
-        }
-    }
+	{
+		for (int j = 0; j < ss->sheet_w; j++)
+		{
+			pixels[(i + y) * WIDTH + (j + x)] =  ss->pixels[i * ss->sheet_w + j];
+		}
+	}
 }
 
 void		grab_sprite(t_spritesheet *ss, int num)
@@ -794,7 +794,7 @@ void	fill_pixels(uint32_t *pixels, uint32_t color)
 		pixels[i] = color;
 }
 
-void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *background, t_bitmap_texture *hud)
+void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *background, t_bitmap_texture *hud, t_spritesheet *ss)
 {
 	uint32_t *bg = background->pixels;
 	uint32_t *cockpit = hud->pixels;
@@ -823,7 +823,6 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 	uint32_t hiddeny2[screen->width];
 	for(int i = 0; i < screen->width; i++)
 		hiddeny2[i] = screen->height;
-
 	for(float z=1; z < distance; z += deltaz)
 	{
 		float plx =  -cosang * z - sinang * z;
@@ -836,6 +835,8 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 		ply += player->z;
 		float invz = 1 / z * 240 * scale_height;
 		int mapoffset = 0;
+		if (z < distance/2 && z > distance/4)
+			display_sprite(screen->pixels, ss, 19, WIDTH / 2 - 64, HEIGHT / 2 - 64, 4);
 		for(int i=0; i < screen->width; i++)
 		{
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
@@ -994,7 +995,7 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 	{
 		if (game->SDL.e.button.button == SDL_BUTTON_LEFT)
 			printf("height:%d\n", player->pos.y);
-//			printf("horizon:%d\n", player->horizon);
+		//			printf("horizon:%d\n", player->horizon);
 		if (game->SDL.e.button.button == SDL_BUTTON_RIGHT)
 			printf("x:%d y: %d\n", player->pos.x, player->pos.z);
 	}
@@ -1187,9 +1188,9 @@ void	render_button(t_screen *screen, t_button *button, SDL_MouseButtonEvent mous
 		{
 			if (button_click(button, mouse) == 1)
 				screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button->texture->pixels[i * button->texture->head.width + j] & 0xFF00FF00;
-				//screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = 0xFF00FF00;
+			//screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = 0xFF00FF00;
 			else
-			//	screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, mouse.x, mouse.y) ? 0xFFFF00FF : 0xFF00FFFF;
+				//	screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, mouse.x, mouse.y) ? 0xFFFF00FF : 0xFF00FFFF;
 				screen->pixels[(button->pos.y + i) * WIDTH + (button->pos.x + j)] = button_hover(button, mouse.x, mouse.y) ?  button->texture->pixels[i * button->texture->head.width + j] & 0xFFFF0000 : button->texture->pixels[i * button->texture->head.width + j] ;
 			j++;
 		}
@@ -1245,15 +1246,15 @@ void	brush_height(t_game *game, t_map *map, SDL_MouseButtonEvent mouse)
 			if (game->E_STATE == BRUSH_FLAT && map->heightmap[pos] + game->tools.radius_value < game->tools.high_value)
 				ft_flatcircle(map, circle, game->tools.radius_value, map->heightmap[pos], game->tools.high_value);
 		}
-				// {
-				// 	if (game->E_STATE == BRUSH_HIGH)
-				// 		map->heightmap[pos] += 30;
-				// 	pos = (mouse.y - (int)circle.y) * map->width + (mouse.x - (int)circle.x);
-				// 	if (game->E_STATE == BRUSH_DOWN)
-				// 		map->heightmap[pos] -= 30;
-				// 	if (game->E_STATE == BRUSH_FLAT)
-				// 		map->heightmap[pos] = 30;
-				// }
+		// {
+		// 	if (game->E_STATE == BRUSH_HIGH)
+		// 		map->heightmap[pos] += 30;
+		// 	pos = (mouse.y - (int)circle.y) * map->width + (mouse.x - (int)circle.x);
+		// 	if (game->E_STATE == BRUSH_DOWN)
+		// 		map->heightmap[pos] -= 30;
+		// 	if (game->E_STATE == BRUSH_FLAT)
+		// 		map->heightmap[pos] = 30;
+		// }
 	}
 
 }
@@ -1266,7 +1267,7 @@ void	brush_height(t_game *game, t_map *map, SDL_MouseButtonEvent mouse)
 // 	int	pos;
 
 // 	//int y = ((HEIGHT - map->height) /2);
-	
+
 // 	if (mouse.button == SDL_BUTTON_LEFT && mouse.type != SDL_MOUSEBUTTONUP)
 // 	{
 // 		if (mouse.x >= (WIDTH / 2 - map->width / 2) && mouse.x <= (WIDTH / 2 + map->width / 2))
@@ -1290,7 +1291,7 @@ void	brush_height(t_game *game, t_map *map, SDL_MouseButtonEvent mouse)
 int		if_brush(t_game *game)
 {
 	if (game->E_STATE == BRUSH || game->E_STATE == BRUSH_DOWN ||
-		game->E_STATE == BRUSH_FLAT || game->E_STATE == BRUSH_HIGH)
+			game->E_STATE == BRUSH_FLAT || game->E_STATE == BRUSH_HIGH)
 		return (1);
 	return (0);
 }
@@ -1440,7 +1441,7 @@ void	draw_edit(t_game *game, t_map *map, t_bitmap_texture *background)
 	SDL_GetMouseState(&pos.x, &pos.y);
 	// printf("posx = %d, posy = %d\n", pos.x, pos.y);
 	if ((game->STATE == EDIT && game->E_STATE == BRUSH_FLAT) && (pos.x + game->tools.radius_value < WIDTH && pos.x - game->tools.radius_value > 0 &&
-			pos.y + game->tools.radius_value < HEIGHT && pos.y - game->tools.radius_value > 0))
+				pos.y + game->tools.radius_value < HEIGHT && pos.y - game->tools.radius_value > 0))
 		ft_circle(&(game->screen), pos, game->tools.radius_value, 0xFFFFFF);
 }
 
@@ -1544,12 +1545,12 @@ int main(int argc, char **argv)
 		collision_height(map.heightmap, &player.pos, &player.pos.y, 1);
 		if (game.STATE == GAME)
 		{
-			render(&game.screen, &map, &player, bg, cockpit);
+			render(&game.screen, &map, &player, bg, cockpit, testss);
 			// display_ss(testss, game.screen.pixels, game.screen.width);
-			animate_sprite(&walk_front, testss, game.screen.pixels, 0, 500, 1);
-			animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500, 2);
-			animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500, 3);
-			animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500, 4);
+			//		animate_sprite(&walk_front, testss, game.screen.pixels, 0, 500, 1);
+			//		animate_sprite(&walk_left, testss, game.screen.pixels, 448, 500, 2);
+			//		animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500, 3);
+			//		animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500, 4);
 			// scale_image(cockpit, game.screen.pixels, 0, 0, 0.5);
 			// display_sprite(game.screen.pixels, testss, 19, 500, 200, 7);
 			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
@@ -1580,7 +1581,7 @@ int main(int argc, char **argv)
 		if (game.STATE == EDIT)
 		{
 			if (game.E_STATE == BRUSH || game.E_STATE == BRUSH_DOWN || game.E_STATE == BRUSH_HIGH
-				|| game.E_STATE == BRUSH_FLAT)
+					|| game.E_STATE == BRUSH_FLAT)
 				brush_height(&game, &map, game.SDL.e.button);
 			draw_edit(&game, &map, bg);
 			act_edit_button(&edit_button_list, game.SDL.e.button, &game);
