@@ -195,6 +195,50 @@ void	scale_image(t_bitmap_texture *image, uint32_t *pixels, int x, int y, double
     }
 }
 
+int		line_is_on_mob(t_spritesheet *ss, int posx, int posy, int line, int coef)
+{
+	int	width_mob;
+	int	height_mob;
+
+	width_mob = ss->sprite_w * coef;
+	height_mob = ss->sprite_h * coef;
+	if (line >= posx && line <= posx + width_mob)
+		return (1);
+	return (0);
+}
+
+void	display_vert_line(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int posy, double coef, int line)
+{
+    // int	*temp = new int[w2*h2];
+	// int	size;
+    double	px, py ;
+    double	x_ratio;
+	double	y_ratio;
+	double	h2;
+	double	w2;
+	int		index;
+
+	//if (line_is_on_mob(ss, posx, posy, line, coef) == 0)
+	//	return;
+	//else
+	//{
+		w2 = ss->sprite_w * coef;
+		h2 = ss->sprite_h * coef;
+		x_ratio = ss->sprite_w / w2;
+    	y_ratio = ss->sprite_h / h2;
+		// size = w2 * h2;
+
+    	for (int i = 0; i <= h2; i++)
+		{
+    	   // py = floorf(i * y_ratio);ß
+			index = (int)(((line - posx) + i * ss->sprite_w));
+			// printf("index = %d\n", index);
+			if (ss->sprite[num][index] != 0xFFFFFF)
+				pixels[line + ((i + posy) * WIDTH)] = ss->sprite[num][index];
+    	}
+	//}
+}
+
 void	display_sprite(uint32_t *pixels, t_spritesheet *ss, int num, int posx, int posy, double coef)
 {
     // int	*temp = new int[w2*h2];
@@ -803,7 +847,6 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 		ply += player->z;
 		float invz = 1 / z * 240 * scale_height;
 		int mapoffset = 0;
-		if (!(z <= distance/4)) display_sprite(screen->pixels, ss, 18, WIDTH/2, HEIGHT/2, 2);
 		for(int i=0; i < screen->width; i++)
 		{
 			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
@@ -815,7 +858,7 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 		}
 		deltaz += 0.005;
 	}
-	draw_hud(pixels, cockpit);
+	// draw_hud(pixels, cockpit);
 }
 
 int	collision_height(int *hm, t_point *player, int *height, int playerheight)
@@ -1417,7 +1460,7 @@ int main(int argc, char **argv)
 
 	t_bitmap_texture *bg = load_bmp("assets/sky/sky1080.bmp");
 	t_bitmap_texture *cockpit = load_bmp("assets/cockpit1080.bmp");
-	t_spritesheet	*testss = load_spritesheet("sprite-sheet-png-walking-2.bmp", 36, 9, 4);
+	t_spritesheet	*testss = load_spritesheet("assets/sprite-sheet-png-walking-2.bmp", 36, 9, 4);
 	t_map map;
 	t_animation		walk_left;
 	t_animation		walk_right;
@@ -1501,7 +1544,9 @@ int main(int argc, char **argv)
 			// animate_sprite(&walk_behind, testss, game.screen.pixels, 896, 500, 4);
 			// animate_sprite(&walk_right, testss, game.screen.pixels, 1344, 500, 4);
 			// scale_image(cockpit, game.screen.pixels, 0, 0, 0.5);
-			// display_sprite(game.screen.pixels, testss, 19, 500, 200, 7);
+			// display_sprite(game.screen.pixels, testss, 19, 500, 200, 1);
+			for(int i = 0; i < 64; i++)
+				display_vert_line(game.screen.pixels, testss, 10, 500, 200, 1, 500 + i);
 			// display_sprite(testss, 0, game.screen.pixels, 0, 0);
 			// display_sprite(testss, 1, game.screen.pixels, 64, 64);
 			// display_sprite(testss, 2, game.screen.pixels, 128, 128);
@@ -1511,7 +1556,7 @@ int main(int argc, char **argv)
 			// display_sprite(testss, 6, game.screen.pixels, 400, 400);
 			// display_sprite(testss, z, game.screen.pixels, WIDTH / 2, 700);
 			// display_sprite(testss, 9, game.screen.pixels, 500, 500);
-			// display_sprite(testss, 19, game.screen.pixels, 564, 500);
+			display_sprite(game.screen.pixels, testss, 10, 500, 264, 1);
 			// display_sprite(testss, 18, game.screen.pixels, 620, 500);
 			// display_sprite(testss, 26, game.screen.pixels, 600, 500);
 			// display_sprite(testss, 36, game.screen.pixels, 500, 600);
