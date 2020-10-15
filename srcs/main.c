@@ -589,6 +589,10 @@ void	process_continuous_key(t_game *game, t_player *player, t_point *direction)
 	if (keystate[SDL_SCANCODE_S]) move_backward(player, direction);
 	if (keystate[SDL_SCANCODE_A]) move_left(player, direction);
 	if (keystate[SDL_SCANCODE_D]) move_right(player, direction);
+	if (keystate[SDL_SCANCODE_Q]) player->view_direction -= 0.2;
+	if (keystate[SDL_SCANCODE_E]) player->view_direction += 0.2;
+	if (keystate[SDL_SCANCODE_R]) player->horizon += 10;
+	if (keystate[SDL_SCANCODE_F]) player->horizon -= 10;
 }
 
 int	game_event(t_game *game, t_player *player, t_point *direction)
@@ -606,7 +610,8 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 		if (game->SDL.e.button.button == SDL_BUTTON_RIGHT)
 			printf("x:%d y: %d\n", player->pos.x, player->pos.z);
 	}
-	if (game->SDL.e.type == SDL_MOUSEMOTION)
+	//disable while working on a VM
+	/*if (game->SDL.e.type == SDL_MOUSEMOTION)
 	{
 		if (game->SDL.e.button.x > game->screen.width / 2)
 			player->view_direction -= 0.01 * (game->SDL.e.button.x - game->screen.width / 2);
@@ -617,7 +622,7 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 		if (game->SDL.e.button.y < game->screen.height / 2)
 			player->horizon += 1 * (game->screen.height/2 - game->SDL.e.button.y);
 	}
-
+	*/
 	return (0);
 }
 
