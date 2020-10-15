@@ -816,6 +816,65 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 	float sinang = sin(*phi);
 	float cosang = cos(*phi);
 
+	distance = 300;
+
+	float deltaz = 1;
+	for(float z = distance; z > 0; z -= 1)
+	{
+		float plx =  -cosang * z - sinang * z;
+		float ply =   sinang * z - cosang * z;
+		float prx =   cosang * z - sinang * z;
+		float pry =  -sinang * z - cosang * z;
+		
+		plx += player->x;
+		ply += player->z;
+		
+		prx += player->x;
+		pry += player->z;
+		
+		float dx = (prx - plx) / screen->width;
+		float dy = (pry - ply) / screen->width;
+		
+		float invz = 1 / z * 240 * scale_height;
+		
+		int mapoffset = 0;
+		for(int i=0; i < screen->width; i++)
+		{
+			//mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
+			//float heightonscreen = ((*height) - map->heightmap[mapoffset]) * invz + (*horizon + 512);
+			mapoffset = (((int)floorf(ply) & (int)mapwidthperiod) << 10) + (((int)floorf(plx)) & ((int)mapheightperiod));
+			float heightonscreen = ((*height) - map->heightmap[mapoffset]) * invz + (*horizon + 512);
+			draw_vertical_line(pixels, i, heightonscreen, HEIGHT - 1, light(colormap[mapoffset], z, distance, 10));
+			plx += dx;
+			ply += dy;
+		}
+	}
+	draw_hud(pixels, cockpit);
+}
+
+/*
+void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *background, t_bitmap_texture *hud, t_spritesheet *ss)
+{
+	uint32_t *bg = background->pixels;
+	uint32_t *cockpit = hud->pixels;
+	uint32_t *pixels = screen->pixels;
+	uint32_t *colormap = map->colormap;
+	t_point *player = &camera->pos;
+	float *phi = &camera->view_direction;
+	int *height = &camera->pos.y;
+	int *horizon = &camera->horizon;
+	int scale_height = map->scale;
+	int distance = camera->view_distance;
+	memset(pixels, 0x000000, sizeof(uint32_t) * screen->width * screen->height);
+	//draw_bg(pixels, bg);
+	//fill_pixels(pixels, 0x000000);
+	int mapwidthperiod = map->width - 1;
+	int mapheightperiod = map->height - 1;
+
+
+	float sinang = sin(*phi);
+	float cosang = cos(*phi);
+
 	float deltaz = 1;
 	uint32_t hiddeny[screen->width];
 	for(int i = 0; i < screen->width; i++)
@@ -850,7 +909,7 @@ void	render(t_screen *screen, t_map *map, t_player *camera, t_bitmap_texture *ba
 	}
 	draw_hud(pixels, cockpit);
 }
-
+*/
 int	collision_height(int *hm, t_point *player, int *height, int playerheight)
 {
 	int x;
@@ -964,6 +1023,11 @@ void	move_right(t_player *player, t_point *direction)
 	direction->x += player->speed * (float)sin(player->view_direction + M_PI/2);
 }
 
+void	add_horizon(t_player *player, int value)
+{
+	player->horizon += value;
+}
+
 void	process_continuous_key(t_game *game, t_player *player, t_point *direction)
 {
 	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
@@ -989,6 +1053,10 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 			use_ammo(player, 1);
 		if (game->SDL.e.key.keysym.sym == SDLK_r)
 			reload(player);
+		if (game->SDL.e.key.keysym.sym == SDLK_i)
+			 add_horizon(player, 50);
+		if (game->SDL.e.key.keysym.sym == SDLK_k)
+			 add_horizon(player, -50);
 		printf("munition = %d, chargeur = %d, chargeur size = %d, name = %s, degat = %d\n", player->curr_weapon.munitions, player->curr_weapon.chargeur, player->curr_weapon.chargeur_size, player->curr_weapon.name, player->curr_weapon.degats);
 	}
 	if (game->SDL.e.type == SDL_MOUSEBUTTONDOWN)
@@ -999,6 +1067,7 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 		if (game->SDL.e.button.button == SDL_BUTTON_RIGHT)
 			printf("x:%d y: %d\n", player->pos.x, player->pos.z);
 	}
+	/*
 	if (game->SDL.e.type == SDL_MOUSEMOTION)
 	{
 		if (game->SDL.e.button.x > game->screen.width / 2)
@@ -1010,7 +1079,7 @@ int	game_event(t_game *game, t_player *player, t_point *direction)
 		if (game->SDL.e.button.y < game->screen.height / 2)
 			player->horizon += 1 * (game->screen.height/2 - game->SDL.e.button.y);
 	}
-
+	*/
 	return (0);
 }
 
