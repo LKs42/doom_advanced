@@ -7,4 +7,4 @@ After finishing the original project with my teammates, I wanted to look for int
 
 Since I'm currently busy working on other stuff, this repository's advancement is in stand-by as of now.
 
-![doom](/screens/doom.png)\
+![doom](/screens/doom.png)
