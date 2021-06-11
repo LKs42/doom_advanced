@@ -8,3 +8,7 @@ After finishing the original project with my teammates, I wanted to look for int
 Since I'm currently busy working on other stuff, this repository's advancement is in stand-by as of now.
 
 ![doom](/screens/doom.png)
+
+# Gameplay video
+
+https://user-images.githubusercontent.com/49161885/121688406-b5a73600-cac3-11eb-89c4-4f0c2a44b55a.mp4
